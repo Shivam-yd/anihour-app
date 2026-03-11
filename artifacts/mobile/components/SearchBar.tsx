@@ -1,12 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import React from "react";
-import {
-  Platform,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  View,
-} from "react-native";
+import { Platform, Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import Colors from "@/constants/colors";
 
@@ -20,7 +14,7 @@ interface Props {
 export function SearchBar({ value, onChangeText, onClear, placeholder = "Search anime..." }: Props) {
   return (
     <View style={styles.container}>
-      <Feather name="search" size={18} color={Colors.dark.textTertiary} style={styles.icon} />
+      <Feather name="search" size={18} color={Colors.dark.primary} style={styles.icon} />
       <TextInput
         style={styles.input}
         value={value}
@@ -52,9 +46,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.dark.border,
     gap: 8,
   },
-  icon: {
-    flexShrink: 0,
-  },
+  icon: { flexShrink: 0 },
   input: {
     flex: 1,
     color: Colors.dark.text,

@@ -3,9 +3,9 @@ import { isLiquidGlassAvailable } from "expo-glass-effect";
 import { Tabs } from "expo-router";
 import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
 import { SymbolView } from "expo-symbols";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
-import { Platform, StyleSheet, View, useColorScheme } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 
 import Colors from "@/constants/colors";
 
@@ -24,7 +24,7 @@ function NativeTabLayout() {
         <Icon sf={{ default: "calendar", selected: "calendar.fill" }} />
         <Label>Upcoming</Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="search">
+      <NativeTabs.Trigger name="search" role="search">
         <Icon sf={{ default: "magnifyingglass", selected: "magnifyingglass" }} />
         <Label>Search</Label>
       </NativeTabs.Trigger>
@@ -44,27 +44,21 @@ function ClassicTabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors.dark.accent,
+        tabBarActiveTintColor: Colors.dark.primary,
         tabBarInactiveTintColor: Colors.dark.tabIconDefault,
         tabBarStyle: {
           position: "absolute",
           backgroundColor: isIOS ? "transparent" : Colors.dark.backgroundSecondary,
-          borderTopWidth: isWeb ? 1 : 0,
+          borderTopWidth: 1,
           borderTopColor: Colors.dark.border,
           elevation: 0,
           ...(isWeb ? { height: 84 } : {}),
         },
         tabBarBackground: () =>
           isIOS ? (
-            <BlurView
-              intensity={90}
-              tint="dark"
-              style={StyleSheet.absoluteFill}
-            />
+            <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill} />
           ) : isWeb ? (
-            <View
-              style={[StyleSheet.absoluteFill, { backgroundColor: Colors.dark.backgroundSecondary }]}
-            />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: Colors.dark.backgroundSecondary }]} />
           ) : null,
       }}
     >
@@ -73,11 +67,7 @@ function ClassicTabLayout() {
         options={{
           title: "Season",
           tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="flame.fill" tintColor={color} size={22} />
-            ) : (
-              <Ionicons name="flame" size={22} color={color} />
-            ),
+            isIOS ? <SymbolView name="flame.fill" tintColor={color} size={22} /> : <Ionicons name="flame" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -85,11 +75,7 @@ function ClassicTabLayout() {
         options={{
           title: "Top",
           tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="trophy.fill" tintColor={color} size={22} />
-            ) : (
-              <Ionicons name="trophy" size={22} color={color} />
-            ),
+            isIOS ? <SymbolView name="trophy.fill" tintColor={color} size={22} /> : <Ionicons name="trophy" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -97,11 +83,7 @@ function ClassicTabLayout() {
         options={{
           title: "Upcoming",
           tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="calendar" tintColor={color} size={22} />
-            ) : (
-              <Feather name="calendar" size={22} color={color} />
-            ),
+            isIOS ? <SymbolView name="calendar" tintColor={color} size={22} /> : <Feather name="calendar" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -109,11 +91,7 @@ function ClassicTabLayout() {
         options={{
           title: "Search",
           tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="magnifyingglass" tintColor={color} size={22} />
-            ) : (
-              <Feather name="search" size={22} color={color} />
-            ),
+            isIOS ? <SymbolView name="magnifyingglass" tintColor={color} size={22} /> : <Feather name="search" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -121,11 +99,7 @@ function ClassicTabLayout() {
         options={{
           title: "News",
           tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="newspaper.fill" tintColor={color} size={22} />
-            ) : (
-              <Feather name="file-text" size={22} color={color} />
-            ),
+            isIOS ? <SymbolView name="newspaper.fill" tintColor={color} size={22} /> : <Feather name="file-text" size={22} color={color} />,
         }}
       />
     </Tabs>

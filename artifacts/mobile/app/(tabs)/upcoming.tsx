@@ -33,25 +33,28 @@ export default function UpcomingScreen() {
   const renderHeader = () => (
     <View>
       <LinearGradient
-        colors={["rgba(236,72,153,0.12)", "transparent"]}
+        colors={["rgba(69,183,209,0.15)", "transparent"]}
         style={styles.headerGradient}
       >
         <View style={[styles.headerContent, { paddingTop: Platform.OS === "web" ? insets.top + 67 : insets.top + 12 }]}>
           <View>
-            <Text style={styles.headerEyebrow}>NEXT SEASON</Text>
+            <Text style={styles.brandText}>ANIHOUR</Text>
             <Text style={styles.headerTitle}>Upcoming</Text>
           </View>
-          <View style={styles.calendarIcon}>
-            <Feather name="calendar" size={22} color={Colors.dark.accentPink} />
+          <View style={styles.iconBox}>
+            <Feather name="calendar" size={22} color={Colors.dark.accent} />
           </View>
         </View>
       </LinearGradient>
 
+      <View style={styles.infoBar}>
+        <Ionicons name="time-outline" size={14} color={Colors.dark.accent} />
+        <Text style={styles.infoText}>Next season anime — coming soon</Text>
+      </View>
+
       {isLoading && (
-        <View style={styles.grid}>
-          {Array.from({ length: 8 }).map((_, i) => (
-            <SkeletonCard key={i} />
-          ))}
+        <View style={styles.skeletonGrid}>
+          {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
         </View>
       )}
 
@@ -73,21 +76,13 @@ export default function UpcomingScreen() {
         ListHeaderComponent={renderHeader}
         renderItem={({ item: row }) => (
           <View style={styles.gridRow}>
-            {row.map((a) => (
-              <AnimeCard key={a.mal_id} anime={a} />
-            ))}
+            {row.map((a) => <AnimeCard key={a.mal_id} anime={a} />)}
           </View>
         )}
-        contentContainerStyle={{
-          paddingBottom: Platform.OS === "web" ? insets.bottom + 84 : insets.bottom + 90,
-        }}
+        contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? insets.bottom + 84 : insets.bottom + 90 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            tintColor={Colors.dark.accentPink}
-          />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.dark.accent} />
         }
         ListEmptyComponent={isLoading ? null : (
           <View style={styles.errorContainer}>
@@ -101,9 +96,7 @@ export default function UpcomingScreen() {
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
   const result: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) {
-    result.push(arr.slice(i, i + size));
-  }
+  for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size));
   return result;
 }
 
@@ -112,9 +105,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.dark.background,
   },
-  headerGradient: {
-    paddingBottom: 8,
-  },
+  headerGradient: { paddingBottom: 8 },
   headerContent: {
     paddingHorizontal: 16,
     paddingBottom: 12,
@@ -122,29 +113,41 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  headerEyebrow: {
-    color: Colors.dark.accentPink,
+  brandText: {
+    color: Colors.dark.accent,
     fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
-    letterSpacing: 2,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 3,
     marginBottom: 2,
   },
   headerTitle: {
     color: Colors.dark.text,
-    fontSize: 28,
+    fontSize: 26,
     fontFamily: "Inter_700Bold",
   },
-  calendarIcon: {
+  iconBox: {
     width: 44,
     height: 44,
-    backgroundColor: "rgba(236,72,153,0.12)",
     borderRadius: 12,
+    backgroundColor: Colors.dark.accentLight,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(236,72,153,0.3)",
+    borderColor: Colors.dark.accent,
   },
-  grid: {
+  infoBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  infoText: {
+    color: Colors.dark.textSecondary,
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+  },
+  skeletonGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 12,

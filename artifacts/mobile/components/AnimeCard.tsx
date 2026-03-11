@@ -4,10 +4,9 @@ import { router } from "expo-router";
 import React, { useCallback } from "react";
 import {
   Dimensions,
-  Platform,
-  Pressable,
   StyleSheet,
   Text,
+  Pressable,
   View,
 } from "react-native";
 import Animated, {
@@ -23,12 +22,12 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = (SCREEN_WIDTH - 48) / 2;
 const CARD_HEIGHT = CARD_WIDTH * 1.5;
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 interface Props {
   anime: Anime;
   rank?: number;
 }
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function AnimeCard({ anime, rank }: Props) {
   const scale = useSharedValue(1);
@@ -37,27 +36,18 @@ export function AnimeCard({ anime, rank }: Props) {
     transform: [{ scale: scale.value }],
   }));
 
-  const handlePressIn = useCallback(() => {
-    scale.value = withSpring(0.95, { damping: 15, stiffness: 300 });
-  }, [scale]);
-
-  const handlePressOut = useCallback(() => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
-  }, [scale]);
-
   const handlePress = useCallback(() => {
     router.push({ pathname: "/anime/[id]", params: { id: anime.mal_id } });
   }, [anime.mal_id]);
 
   const title = anime.title_english ?? anime.title;
-  const imageUrl =
-    anime.images?.jpg?.large_image_url ?? anime.images?.jpg?.image_url;
+  const imageUrl = anime.images?.jpg?.large_image_url ?? anime.images?.jpg?.image_url;
 
   return (
     <AnimatedPressable
       style={[styles.card, animatedStyle]}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      onPressIn={() => { scale.value = withSpring(0.95, { damping: 15, stiffness: 300 }); }}
+      onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 300 }); }}
       onPress={handlePress}
     >
       <Image
@@ -66,7 +56,6 @@ export function AnimeCard({ anime, rank }: Props) {
         contentFit="cover"
         transition={300}
       />
-
       <View style={styles.gradient} />
 
       {rank !== undefined && (
@@ -83,11 +72,16 @@ export function AnimeCard({ anime, rank }: Props) {
       )}
 
       <View style={styles.info}>
-        <Text style={styles.title} numberOfLines={2}>
-          {title}
-        </Text>
-        {anime.episodes !== undefined && anime.episodes > 0 && (
-          <Text style={styles.episodes}>{anime.episodes} eps</Text>
+        <Text style={styles.title} numberOfLines={2}>{title}</Text>
+        {anime.type && (
+          <View style={styles.typeRow}>
+            <View style={styles.typePill}>
+              <Text style={styles.typeText}>{anime.type}</Text>
+            </View>
+            {anime.episodes !== undefined && anime.episodes > 0 && (
+              <Text style={styles.episodes}>{anime.episodes} ep</Text>
+            )}
+          </View>
         )}
       </View>
     </AnimatedPressable>
@@ -106,27 +100,18 @@ export function AnimeCardWide({ anime, index }: WideProps) {
     transform: [{ scale: scale.value }],
   }));
 
-  const handlePressIn = useCallback(() => {
-    scale.value = withSpring(0.97, { damping: 15, stiffness: 300 });
-  }, [scale]);
-
-  const handlePressOut = useCallback(() => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
-  }, [scale]);
-
   const handlePress = useCallback(() => {
     router.push({ pathname: "/anime/[id]", params: { id: anime.mal_id } });
   }, [anime.mal_id]);
 
   const title = anime.title_english ?? anime.title;
-  const imageUrl =
-    anime.images?.jpg?.large_image_url ?? anime.images?.jpg?.image_url;
+  const imageUrl = anime.images?.jpg?.large_image_url ?? anime.images?.jpg?.image_url;
 
   return (
     <AnimatedPressable
       style={[styles.wideCard, animatedStyle]}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      onPressIn={() => { scale.value = withSpring(0.97, { damping: 15, stiffness: 300 }); }}
+      onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 300 }); }}
       onPress={handlePress}
     >
       <Image
@@ -147,25 +132,21 @@ export function AnimeCardWide({ anime, index }: WideProps) {
               <Text style={styles.scoreTextWide}>{anime.score.toFixed(1)}</Text>
             </View>
           )}
-        </View>
-
-        <Text style={styles.wideTitle} numberOfLines={2}>
-          {title}
-        </Text>
-
-        <View style={styles.wideMeta}>
           {anime.type && (
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>{anime.type}</Text>
+            <View style={[styles.typePill, styles.typePillWide]}>
+              <Text style={styles.typeText}>{anime.type}</Text>
             </View>
           )}
+        </View>
+
+        <Text style={styles.wideTitle} numberOfLines={2}>{title}</Text>
+
+        <View style={styles.wideMeta}>
           {anime.episodes !== undefined && anime.episodes > 0 && (
             <Text style={styles.wideEpisodes}>{anime.episodes} eps</Text>
           )}
           {anime.status && (
-            <Text style={styles.wideStatus} numberOfLines={1}>
-              {anime.status}
-            </Text>
+            <Text style={styles.wideStatus} numberOfLines={1}>{anime.status}</Text>
           )}
         </View>
 
@@ -183,9 +164,11 @@ const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: "hidden",
     backgroundColor: Colors.dark.surface,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
   },
   image: {
     width: "100%",
@@ -196,17 +179,17 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: "55%",
-    backgroundColor: "rgba(0,0,0,0.75)",
+    height: "60%",
+    backgroundColor: "rgba(22,33,62,0.85)",
   },
   rankBadge: {
     position: "absolute",
     top: 8,
     left: 8,
-    backgroundColor: Colors.dark.accent,
+    backgroundColor: Colors.dark.primary,
     borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
   },
   rankText: {
     color: "#fff",
@@ -217,13 +200,15 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 8,
     right: 8,
-    backgroundColor: "rgba(0,0,0,0.7)",
+    backgroundColor: "rgba(22,33,62,0.85)",
     borderRadius: 6,
     paddingHorizontal: 6,
     paddingVertical: 3,
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
   },
   scoreText: {
     color: Colors.dark.star,
@@ -241,13 +226,31 @@ const styles = StyleSheet.create({
     color: Colors.dark.text,
     fontSize: 12,
     fontFamily: "Inter_600SemiBold",
-    lineHeight: 16,
+    lineHeight: 17,
+    marginBottom: 4,
+  },
+  typeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  typePill: {
+    backgroundColor: Colors.dark.primaryLight,
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: Colors.dark.primary,
+  },
+  typeText: {
+    color: Colors.dark.primary,
+    fontSize: 9,
+    fontFamily: "Inter_600SemiBold",
   },
   episodes: {
     color: Colors.dark.textSecondary,
     fontSize: 10,
     fontFamily: "Inter_400Regular",
-    marginTop: 3,
   },
 
   wideCard: {
@@ -273,19 +276,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    flexWrap: "wrap",
   },
   rankCircle: {
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: Colors.dark.accentLight,
+    backgroundColor: Colors.dark.primaryLight,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: Colors.dark.accent,
+    borderColor: Colors.dark.primary,
   },
   rankCircleText: {
-    color: Colors.dark.accent,
+    color: Colors.dark.primary,
     fontSize: 11,
     fontFamily: "Inter_700Bold",
   },
@@ -299,6 +303,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: "Inter_700Bold",
   },
+  typePillWide: {
+    marginLeft: "auto",
+  },
   wideTitle: {
     color: Colors.dark.text,
     fontSize: 15,
@@ -311,20 +318,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flexWrap: "wrap",
-    gap: 6,
-  },
-  tag: {
-    backgroundColor: Colors.dark.accentLight,
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderWidth: 1,
-    borderColor: Colors.dark.accent,
-  },
-  tagText: {
-    color: Colors.dark.accent,
-    fontSize: 10,
-    fontFamily: "Inter_600SemiBold",
+    gap: 8,
   },
   wideEpisodes: {
     color: Colors.dark.textSecondary,
@@ -338,9 +332,10 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   genres: {
-    color: Colors.dark.textTertiary,
+    color: Colors.dark.secondary,
     fontSize: 11,
     fontFamily: "Inter_400Regular",
     marginTop: 2,
+    opacity: 0.9,
   },
 });

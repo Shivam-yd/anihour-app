@@ -24,29 +24,18 @@ function ShimmerBox({
   borderRadius?: number;
   style?: object;
 }) {
-  const opacity = useSharedValue(0.4);
+  const opacity = useSharedValue(0.35);
 
   useEffect(() => {
-    opacity.value = withRepeat(
-      withTiming(1, { duration: 800 }),
-      -1,
-      true
-    );
+    opacity.value = withRepeat(withTiming(0.7, { duration: 900 }), -1, true);
   }, [opacity]);
 
-  const animStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
+  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
   return (
     <Animated.View
       style={[
-        {
-          width: width as number,
-          height,
-          borderRadius,
-          backgroundColor: Colors.dark.surfaceElevated,
-        },
+        { width: width as number, height, borderRadius, backgroundColor: Colors.dark.surfaceElevated },
         animStyle,
         style,
       ]}
@@ -56,8 +45,8 @@ function ShimmerBox({
 
 export function SkeletonCard() {
   return (
-    <View style={styles.card}>
-      <ShimmerBox width={CARD_WIDTH} height={CARD_HEIGHT} borderRadius={12} />
+    <View style={{ width: CARD_WIDTH, height: CARD_HEIGHT, borderRadius: 14, overflow: "hidden" }}>
+      <ShimmerBox width={CARD_WIDTH} height={CARD_HEIGHT} borderRadius={14} />
     </View>
   );
 }
@@ -77,12 +66,6 @@ export function SkeletonWideCard() {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
-    borderRadius: 12,
-    overflow: "hidden",
-  },
   wideCard: {
     flexDirection: "row",
     backgroundColor: Colors.dark.surface,

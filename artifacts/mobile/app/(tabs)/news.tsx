@@ -26,16 +26,16 @@ export default function NewsScreen() {
 
   const renderHeader = () => (
     <LinearGradient
-      colors={["rgba(255,215,0,0.10)", "transparent"]}
+      colors={["rgba(255,167,38,0.13)", "transparent"]}
       style={styles.headerGradient}
     >
       <View style={[styles.headerContent, { paddingTop: Platform.OS === "web" ? insets.top + 67 : insets.top + 12 }]}>
         <View>
-          <Text style={styles.headerEyebrow}>LATEST</Text>
+          <Text style={styles.brandText}>ANIHOUR</Text>
           <Text style={styles.headerTitle}>Anime News</Text>
         </View>
-        <View style={styles.newsIcon}>
-          <Feather name="rss" size={20} color={Colors.dark.star} />
+        <View style={styles.rssBox}>
+          <Feather name="rss" size={20} color={Colors.dark.warning} />
         </View>
       </View>
     </LinearGradient>
@@ -45,7 +45,7 @@ export default function NewsScreen() {
     return (
       <View style={styles.container}>
         {renderHeader()}
-        <View style={styles.loadingSkeletons}>
+        <View style={styles.skeletons}>
           {Array.from({ length: 5 }).map((_, i) => (
             <View key={i} style={styles.skeletonCard} />
           ))}
@@ -80,11 +80,7 @@ export default function NewsScreen() {
         }}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            tintColor={Colors.dark.star}
-          />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.dark.warning} />
         }
         ListEmptyComponent={
           <View style={styles.errorContainer}>
@@ -101,9 +97,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.dark.background,
   },
-  headerGradient: {
-    paddingBottom: 12,
-  },
+  headerGradient: { paddingBottom: 12 },
   headerContent: {
     paddingHorizontal: 16,
     paddingBottom: 12,
@@ -111,29 +105,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  headerEyebrow: {
-    color: Colors.dark.star,
+  brandText: {
+    color: Colors.dark.warning,
     fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
-    letterSpacing: 2,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 3,
     marginBottom: 2,
   },
   headerTitle: {
     color: Colors.dark.text,
-    fontSize: 28,
+    fontSize: 26,
     fontFamily: "Inter_700Bold",
   },
-  newsIcon: {
+  rssBox: {
     width: 44,
     height: 44,
-    backgroundColor: "rgba(255,215,0,0.1)",
     borderRadius: 12,
+    backgroundColor: Colors.dark.warningLight,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,215,0,0.3)",
+    borderColor: Colors.dark.warning,
   },
-  loadingSkeletons: {
+  skeletons: {
     paddingTop: 8,
     gap: 10,
     paddingHorizontal: 16,

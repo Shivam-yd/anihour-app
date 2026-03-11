@@ -105,10 +105,12 @@ export async function fetchSeasonNow(page = 1): Promise<Anime[]> {
 
 export async function fetchTopAnime(
   page = 1,
-  filter = "bypopularity"
+  filter = "bypopularity",
+  type?: string
 ): Promise<Anime[]> {
+  const typeParam = type ? `&type=${type}` : "";
   const data = (await fetchWithRetry(
-    `${BASE_URL}/top/anime?page=${page}&limit=25&filter=${filter}`
+    `${BASE_URL}/top/anime?page=${page}&limit=25&filter=${filter}${typeParam}`
   )) as { data: Anime[] };
   return data.data ?? [];
 }

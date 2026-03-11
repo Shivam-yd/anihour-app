@@ -1,4 +1,4 @@
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
 import {
@@ -18,7 +18,8 @@ import { SkeletonWideCard } from "@/components/SkeletonCard";
 import Colors from "@/constants/colors";
 import { fetchTopAnime } from "@/lib/jikan";
 
-type Filter = "bypopularity" | "favorite" | "airing" | "upcoming" | "byrank";
+type Filter = "bypopularity" | "byrank" | "airing" | "upcoming" | "favorite";
+type AnimeType = "all" | "tv" | "movie" | "ova" | "special" | "ona";
 
 const FILTERS: { key: Filter; label: string }[] = [
   { key: "bypopularity", label: "Popular" },
@@ -28,24 +29,39 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "favorite", label: "Favorites" },
 ];
 
+const TYPES: { key: AnimeType; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "tv", label: "TV" },
+  { key: "movie", label: "Movie" },
+  { key: "ova", label: "OVA" },
+  { key: "special", label: "Special" },
+  { key: "ona", label: "ONA" },
+];
+
 export default function TopScreen() {
   const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<Filter>("bypopularity");
+  const [animeType, setAnimeType] = useState<AnimeType>("all");
 
   const { data: anime, isLoading, isError, refetch, isRefetching } = useQuery({
-    queryKey: ["top-anime", filter],
-    queryFn: () => fetchTopAnime(1, filter),
+    queryKey: ["top-anime", filter, animeType],
+    queryFn: () => fetchTopAnime(1, filter, animeType === "all" ? undefined : animeType),
   });
 
   const renderHeader = () => (
     <View>
       <LinearGradient
-        colors={["rgba(34,211,238,0.12)", "transparent"]}
+        colors={["rgba(78,205,196,0.15)", "transparent"]}
         style={styles.headerGradient}
       >
         <View style={[styles.headerContent, { paddingTop: Platform.OS === "web" ? insets.top + 67 : insets.top + 12 }]}>
-          <Text style={styles.headerTitle}>Top Anime</Text>
-          <Ionicons name="trophy" size={24} color={Colors.dark.accentCyan} />
+          <View>
+            <Text style={styles.brandText}>ANIHOUR</Text>
+            <Text style={styles.headerTitle}>Top Anime</Text>
+          </View>
+          <View style={styles.trophyBox}>
+            <Ionicons name="trophy" size={22} color={Colors.dark.secondary} />
+          </View>
         </View>
       </LinearGradient>
 
@@ -57,22 +73,32 @@ export default function TopScreen() {
         contentContainerStyle={styles.filtersRow}
         renderItem={({ item }) => (
           <Pressable
-            style={[styles.filterChip, filter === item.key && styles.filterChipActive]}
+            style={[styles.chip, filter === item.key && styles.chipActive]}
             onPress={() => setFilter(item.key)}
           >
-            <Text style={[styles.filterText, filter === item.key && styles.filterTextActive]}>
-              {item.label}
-            </Text>
+            <Text style={[styles.chipText, filter === item.key && styles.chipTextActive]}>{item.label}</Text>
+          </Pressable>
+        )}
+      />
+
+      <FlatList
+        horizontal
+        data={TYPES}
+        keyExtractor={(t) => t.key}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.typesRow}
+        renderItem={({ item }) => (
+          <Pressable
+            style={[styles.typeChip, animeType === item.key && styles.typeChipActive]}
+            onPress={() => setAnimeType(item.key)}
+          >
+            <Text style={[styles.typeChipText, animeType === item.key && styles.typeChipTextActive]}>{item.label}</Text>
           </Pressable>
         )}
       />
 
       {isLoading && (
-        <View>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <SkeletonWideCard key={i} />
-          ))}
-        </View>
+        <View>{Array.from({ length: 6 }).map((_, i) => <SkeletonWideCard key={i} />)}</View>
       )}
 
       {isError && (
@@ -91,19 +117,11 @@ export default function TopScreen() {
         data={anime ?? []}
         keyExtractor={(item) => `${item.mal_id}`}
         ListHeaderComponent={renderHeader}
-        renderItem={({ item, index }) => (
-          <AnimeCardWide anime={item} index={index} />
-        )}
-        contentContainerStyle={{
-          paddingBottom: Platform.OS === "web" ? insets.bottom + 84 : insets.bottom + 90,
-        }}
+        renderItem={({ item, index }) => <AnimeCardWide anime={item} index={index} />}
+        contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? insets.bottom + 84 : insets.bottom + 90 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            tintColor={Colors.dark.accentCyan}
-          />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.dark.secondary} />
         }
         ListEmptyComponent={isLoading ? null : (
           <View style={styles.errorContainer}>
@@ -130,17 +148,39 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  brandText: {
+    color: Colors.dark.secondary,
+    fontSize: 11,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 3,
+    marginBottom: 2,
+  },
   headerTitle: {
     color: Colors.dark.text,
-    fontSize: 28,
+    fontSize: 26,
     fontFamily: "Inter_700Bold",
+  },
+  trophyBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: Colors.dark.secondaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: Colors.dark.secondary,
   },
   filtersRow: {
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingBottom: 8,
     gap: 8,
   },
-  filterChip: {
+  typesRow: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    gap: 7,
+  },
+  chip: {
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 20,
@@ -148,17 +188,38 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.dark.border,
   },
-  filterChipActive: {
-    backgroundColor: Colors.dark.accentLight,
-    borderColor: Colors.dark.accent,
+  chipActive: {
+    backgroundColor: Colors.dark.primaryLight,
+    borderColor: Colors.dark.primary,
   },
-  filterText: {
+  chipText: {
     color: Colors.dark.textSecondary,
     fontSize: 13,
     fontFamily: "Inter_500Medium",
   },
-  filterTextActive: {
-    color: Colors.dark.accent,
+  chipTextActive: {
+    color: Colors.dark.primary,
+    fontFamily: "Inter_600SemiBold",
+  },
+  typeChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: Colors.dark.surface,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  typeChipActive: {
+    backgroundColor: Colors.dark.secondaryLight,
+    borderColor: Colors.dark.secondary,
+  },
+  typeChipText: {
+    color: Colors.dark.textSecondary,
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+  },
+  typeChipTextActive: {
+    color: Colors.dark.secondary,
     fontFamily: "Inter_600SemiBold",
   },
   errorContainer: {

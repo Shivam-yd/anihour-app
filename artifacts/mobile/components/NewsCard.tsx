@@ -25,10 +25,7 @@ function formatDate(dateStr: string): string {
 
 export function NewsCard({ article }: Props) {
   const scale = useSharedValue(1);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const handlePress = useCallback(async () => {
     if (article.url) {
@@ -49,12 +46,7 @@ export function NewsCard({ article }: Props) {
       onPress={handlePress}
     >
       {imageUrl ? (
-        <Image
-          source={{ uri: imageUrl }}
-          style={styles.image}
-          contentFit="cover"
-          transition={300}
-        />
+        <Image source={{ uri: imageUrl }} style={styles.image} contentFit="cover" transition={300} />
       ) : (
         <View style={styles.imagePlaceholder}>
           <Feather name="file-text" size={28} color={Colors.dark.textTertiary} />
@@ -65,17 +57,13 @@ export function NewsCard({ article }: Props) {
         <View style={styles.meta}>
           <Text style={styles.date}>{formatDate(article.date)}</Text>
           <View style={styles.dot} />
-          <Text style={styles.author}>{article.author_username}</Text>
+          <Text style={styles.author} numberOfLines={1}>{article.author_username}</Text>
         </View>
 
-        <Text style={styles.title} numberOfLines={3}>
-          {article.title}
-        </Text>
+        <Text style={styles.title} numberOfLines={3}>{article.title}</Text>
 
         {article.excerpt ? (
-          <Text style={styles.excerpt} numberOfLines={2}>
-            {article.excerpt}
-          </Text>
+          <Text style={styles.excerpt} numberOfLines={2}>{article.excerpt}</Text>
         ) : null}
 
         <View style={styles.footer}>
@@ -85,7 +73,10 @@ export function NewsCard({ article }: Props) {
               <Text style={styles.commentsText}>{article.comments}</Text>
             </View>
           )}
-          <Feather name="external-link" size={13} color={Colors.dark.accent} />
+          <View style={styles.readMore}>
+            <Text style={styles.readMoreText}>Read more</Text>
+            <Feather name="external-link" size={12} color={Colors.dark.secondary} />
+          </View>
         </View>
       </View>
     </AnimatedPressable>
@@ -125,7 +116,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   date: {
-    color: Colors.dark.accent,
+    color: Colors.dark.primary,
     fontSize: 11,
     fontFamily: "Inter_500Medium",
   },
@@ -170,5 +161,15 @@ const styles = StyleSheet.create({
     color: Colors.dark.textTertiary,
     fontSize: 11,
     fontFamily: "Inter_400Regular",
+  },
+  readMore: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  readMoreText: {
+    color: Colors.dark.secondary,
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
   },
 });
