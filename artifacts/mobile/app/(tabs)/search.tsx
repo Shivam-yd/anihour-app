@@ -5,7 +5,6 @@ import {
   FlatList,
   Keyboard,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -14,14 +13,22 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AnimeCardWide } from "@/components/AnimeCard";
+import { ContentToggleBar } from "@/components/ContentToggleBar";
 import { SearchBar } from "@/components/SearchBar";
 import Colors from "@/constants/colors";
+import { useContentSettings } from "@/lib/content-settings";
 import { searchAnime, Anime } from "@/lib/jikan";
 
 const SUGGESTIONS = [
   "Naruto", "One Piece", "Attack on Titan", "Demon Slayer",
   "Fullmetal Alchemist", "Death Note", "Dragon Ball", "My Hero Academia",
   "Hunter x Hunter", "Sword Art Online", "Tokyo Ghoul", "Re:Zero",
+];
+
+const MANGA_SUGGESTIONS = [
+  "Berserk", "One Piece", "Vagabond", "Vinland Saga",
+  "Fullmetal Alchemist", "Death Note", "Dragon Ball", "Jujutsu Kaisen",
+  "Chainsaw Man", "Bleach", "Naruto", "Demon Slayer",
 ];
 
 export default function SearchScreen() {
@@ -31,6 +38,8 @@ export default function SearchScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState(false);
+  const { contentType, isAdultMode } = useContentSettings();
+  const isManga = contentType === "manga";
 
   const handleSearch = useCallback(async (q: string) => {
     if (!q.trim() || q.trim().length < 2) return;
@@ -39,7 +48,7 @@ export default function SearchScreen() {
     setError(false);
     setHasSearched(true);
     try {
-      const data = await searchAnime(q.trim());
+      const data = await searchAnime(q.trim(), 1, contentType, isAdultMode);
       setResults(data);
     } catch {
       setError(true);
@@ -47,7 +56,7 @@ export default function SearchScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [contentType, isAdultMode]);
 
   const handleClear = useCallback(() => {
     setQuery("");
@@ -61,17 +70,21 @@ export default function SearchScreen() {
     handleSearch(s);
   }, [handleSearch]);
 
+  const suggestions = isManga ? MANGA_SUGGESTIONS : SUGGESTIONS;
+
   const renderHeader = () => (
     <View style={[styles.header, { paddingTop: Platform.OS === "web" ? insets.top + 67 : insets.top + 12 }]}>
       <View style={styles.titleRow}>
         <View>
           <Text style={styles.brandText}>ANIHOUR</Text>
-          <Text style={styles.headerTitle}>Search</Text>
+          <Text style={styles.headerTitle}>Search {isManga ? "Manga" : "Anime"}</Text>
         </View>
         <View style={styles.searchIcon}>
           <Feather name="search" size={20} color={Colors.dark.primary} />
         </View>
       </View>
+
+      <ContentToggleBar />
 
       <View style={styles.searchBarRow}>
         <View style={styles.searchBarWrapper}>
@@ -79,14 +92,10 @@ export default function SearchScreen() {
             value={query}
             onChangeText={setQuery}
             onClear={handleClear}
-            placeholder="Search anime..."
+            placeholder={`Search ${isManga ? "manga" : "anime"}...`}
           />
         </View>
-        <TouchableOpacity
-          style={styles.searchButton}
-          onPress={() => handleSearch(query)}
-          activeOpacity={0.8}
-        >
+        <TouchableOpacity style={styles.searchButton} onPress={() => handleSearch(query)} activeOpacity={0.8}>
           <Feather name="arrow-right" size={18} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -95,13 +104,8 @@ export default function SearchScreen() {
         <View style={styles.suggestions}>
           <Text style={styles.suggestionsLabel}>Popular Searches</Text>
           <View style={styles.chips}>
-            {SUGGESTIONS.map((s) => (
-              <TouchableOpacity
-                key={s}
-                style={styles.chip}
-                onPress={() => handleSuggestion(s)}
-                activeOpacity={0.7}
-              >
+            {suggestions.map((s) => (
+              <TouchableOpacity key={s} style={styles.chip} onPress={() => handleSuggestion(s)} activeOpacity={0.7}>
                 <Feather name="trending-up" size={11} color={Colors.dark.primary} />
                 <Text style={styles.chipText}>{s}</Text>
               </TouchableOpacity>
@@ -160,125 +164,28 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.dark.background,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  brandText: {
-    color: Colors.dark.primary,
-    fontSize: 11,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 3,
-    marginBottom: 2,
-  },
-  headerTitle: {
-    color: Colors.dark.text,
-    fontSize: 26,
-    fontFamily: "Inter_700Bold",
-  },
+  container: { flex: 1, backgroundColor: Colors.dark.background },
+  header: { paddingHorizontal: 16, paddingBottom: 8 },
+  titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
+  brandText: { color: Colors.dark.primary, fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 3, marginBottom: 2 },
+  headerTitle: { color: Colors.dark.text, fontSize: 26, fontFamily: "Inter_700Bold" },
   searchIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: Colors.dark.primaryLight,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: Colors.dark.primary,
+    width: 44, height: 44, borderRadius: 12, backgroundColor: Colors.dark.primaryLight,
+    alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: Colors.dark.primary,
   },
-  searchBarRow: {
-    flexDirection: "row",
-    gap: 10,
-    alignItems: "center",
-  },
+  searchBarRow: { flexDirection: "row", gap: 10, alignItems: "center", marginBottom: 4 },
   searchBarWrapper: { flex: 1 },
-  searchButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: Colors.dark.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  suggestions: { marginTop: 20 },
-  suggestionsLabel: {
-    color: Colors.dark.textSecondary,
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-    marginBottom: 10,
-    letterSpacing: 1,
-    textTransform: "uppercase",
-  },
-  chips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: Colors.dark.surface,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-  },
-  chipText: {
-    color: Colors.dark.textSecondary,
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-  },
-  stateContainer: {
-    alignItems: "center",
-    paddingTop: 60,
-    gap: 12,
-  },
-  stateTitle: {
-    color: Colors.dark.text,
-    fontSize: 18,
-    fontFamily: "Inter_600SemiBold",
-  },
-  stateText: {
-    color: Colors.dark.textSecondary,
-    fontSize: 14,
-    fontFamily: "Inter_400Regular",
-    textAlign: "center",
-  },
-  resultsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 14,
-    marginBottom: 4,
-  },
-  resultsBadge: {
-    backgroundColor: Colors.dark.primaryLight,
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderWidth: 1,
-    borderColor: Colors.dark.primary,
-  },
-  resultsBadgeText: {
-    color: Colors.dark.primary,
-    fontSize: 12,
-    fontFamily: "Inter_700Bold",
-  },
-  resultsText: {
-    color: Colors.dark.textSecondary,
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-  },
+  searchButton: { width: 44, height: 44, borderRadius: 12, backgroundColor: Colors.dark.primary, alignItems: "center", justifyContent: "center" },
+  suggestions: { marginTop: 16 },
+  suggestionsLabel: { color: Colors.dark.textSecondary, fontSize: 12, fontFamily: "Inter_600SemiBold", marginBottom: 10, letterSpacing: 1, textTransform: "uppercase" },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  chip: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: Colors.dark.surface, borderRadius: 20, borderWidth: 1, borderColor: Colors.dark.border },
+  chipText: { color: Colors.dark.textSecondary, fontSize: 13, fontFamily: "Inter_400Regular" },
+  stateContainer: { alignItems: "center", paddingTop: 60, gap: 12 },
+  stateTitle: { color: Colors.dark.text, fontSize: 18, fontFamily: "Inter_600SemiBold" },
+  stateText: { color: Colors.dark.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center" },
+  resultsRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14, marginBottom: 4 },
+  resultsBadge: { backgroundColor: Colors.dark.primaryLight, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2, borderWidth: 1, borderColor: Colors.dark.primary },
+  resultsBadgeText: { color: Colors.dark.primary, fontSize: 12, fontFamily: "Inter_700Bold" },
+  resultsText: { color: Colors.dark.textSecondary, fontSize: 13, fontFamily: "Inter_400Regular" },
 });

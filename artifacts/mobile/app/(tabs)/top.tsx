@@ -14,8 +14,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 
 import { AnimeCardWide } from "@/components/AnimeCard";
+import { ContentToggleBar } from "@/components/ContentToggleBar";
 import { SkeletonWideCard } from "@/components/SkeletonCard";
 import Colors from "@/constants/colors";
+import { useContentSettings } from "@/lib/content-settings";
 import { fetchTopAnime } from "@/lib/jikan";
 
 type Filter = "bypopularity" | "" | "airing" | "upcoming";
@@ -41,22 +43,22 @@ export default function TopScreen() {
   const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<Filter>("bypopularity");
   const [animeType, setAnimeType] = useState<AnimeType>("all");
+  const { contentType, isAdultMode } = useContentSettings();
+  const isManga = contentType === "manga";
 
   const { data: anime, isLoading, isError, refetch, isRefetching } = useQuery({
-    queryKey: ["top-anime", filter, animeType],
-    queryFn: () => fetchTopAnime(1, filter, animeType === "all" ? undefined : animeType),
+    queryKey: ["top-anime", filter, animeType, contentType, isAdultMode],
+    queryFn: () =>
+      fetchTopAnime(1, filter, animeType === "all" ? undefined : animeType, contentType, isAdultMode),
   });
 
   const renderHeader = () => (
     <View>
-      <LinearGradient
-        colors={["rgba(78,205,196,0.15)", "transparent"]}
-        style={styles.headerGradient}
-      >
+      <LinearGradient colors={["rgba(78,205,196,0.15)", "transparent"]} style={styles.headerGradient}>
         <View style={[styles.headerContent, { paddingTop: Platform.OS === "web" ? insets.top + 67 : insets.top + 12 }]}>
           <View>
             <Text style={styles.brandText}>ANIHOUR</Text>
-            <Text style={styles.headerTitle}>Top Anime</Text>
+            <Text style={styles.headerTitle}>Top {isManga ? "Manga" : "Anime"}</Text>
           </View>
           <View style={styles.trophyBox}>
             <Ionicons name="trophy" size={22} color={Colors.dark.secondary} />
@@ -64,29 +66,35 @@ export default function TopScreen() {
         </View>
       </LinearGradient>
 
-      <View style={styles.filtersRow}>
-        {FILTERS.map((item) => (
-          <Pressable
-            key={item.key}
-            style={[styles.chip, filter === item.key && styles.chipActive]}
-            onPress={() => setFilter(item.key)}
-          >
-            <Text style={[styles.chipText, filter === item.key && styles.chipTextActive]}>{item.label}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <ContentToggleBar />
 
-      <View style={styles.typesRow}>
-        {TYPES.map((item) => (
-          <Pressable
-            key={item.key}
-            style={[styles.typeChip, animeType === item.key && styles.typeChipActive]}
-            onPress={() => setAnimeType(item.key)}
-          >
-            <Text style={[styles.typeChipText, animeType === item.key && styles.typeChipTextActive]}>{item.label}</Text>
-          </Pressable>
-        ))}
-      </View>
+      {!isManga && !isAdultMode && (
+        <>
+          <View style={styles.filtersRow}>
+            {FILTERS.map((item) => (
+              <Pressable
+                key={item.key}
+                style={[styles.chip, filter === item.key && styles.chipActive]}
+                onPress={() => setFilter(item.key)}
+              >
+                <Text style={[styles.chipText, filter === item.key && styles.chipTextActive]}>{item.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <View style={styles.typesRow}>
+            {TYPES.map((item) => (
+              <Pressable
+                key={item.key}
+                style={[styles.typeChip, animeType === item.key && styles.typeChipActive]}
+                onPress={() => setAnimeType(item.key)}
+              >
+                <Text style={[styles.typeChipText, animeType === item.key && styles.typeChipTextActive]}>{item.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </>
+      )}
 
       {isLoading && (
         <View>{Array.from({ length: 6 }).map((_, i) => <SkeletonWideCard key={i} />)}</View>
@@ -111,12 +119,10 @@ export default function TopScreen() {
         renderItem={({ item, index }) => <AnimeCardWide anime={item} index={index} />}
         contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? insets.bottom + 84 : insets.bottom + 90 }}
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.dark.secondary} />
-        }
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.dark.secondary} />}
         ListEmptyComponent={isLoading ? null : (
           <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>No anime found</Text>
+            <Text style={styles.errorText}>No content found</Text>
           </View>
         )}
       />
@@ -125,113 +131,35 @@ export default function TopScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.dark.background,
-  },
-  headerGradient: {
-    paddingBottom: 0,
-  },
+  container: { flex: 1, backgroundColor: Colors.dark.background },
+  headerGradient: { paddingBottom: 0 },
   headerContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    paddingHorizontal: 16, paddingBottom: 12,
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
   },
-  brandText: {
-    color: Colors.dark.secondary,
-    fontSize: 11,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 3,
-    marginBottom: 2,
-  },
-  headerTitle: {
-    color: Colors.dark.text,
-    fontSize: 26,
-    fontFamily: "Inter_700Bold",
-  },
+  brandText: { color: Colors.dark.secondary, fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 3, marginBottom: 2 },
+  headerTitle: { color: Colors.dark.text, fontSize: 26, fontFamily: "Inter_700Bold" },
   trophyBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: Colors.dark.secondaryLight,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: Colors.dark.secondary,
+    width: 44, height: 44, borderRadius: 12, backgroundColor: Colors.dark.secondaryLight,
+    alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: Colors.dark.secondary,
   },
-  filtersRow: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingBottom: 10,
-    gap: 8,
-  },
-  typesRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    gap: 7,
-  },
+  filtersRow: { flexDirection: "row", paddingHorizontal: 16, paddingBottom: 10, gap: 8 },
+  typesRow: { flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 16, paddingBottom: 12, gap: 7 },
   chip: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: Colors.dark.surface,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-    alignItems: "center",
+    flex: 1, paddingVertical: 8, borderRadius: 20,
+    backgroundColor: Colors.dark.surface, borderWidth: 1, borderColor: Colors.dark.border, alignItems: "center",
   },
-  chipActive: {
-    backgroundColor: Colors.dark.primaryLight,
-    borderColor: Colors.dark.primary,
-  },
-  chipText: {
-    color: Colors.dark.textSecondary,
-    fontSize: 13,
-    fontFamily: "Inter_500Medium",
-  },
-  chipTextActive: {
-    color: Colors.dark.primary,
-    fontFamily: "Inter_600SemiBold",
-  },
+  chipActive: { backgroundColor: Colors.dark.primaryLight, borderColor: Colors.dark.primary },
+  chipText: { color: Colors.dark.textSecondary, fontSize: 13, fontFamily: "Inter_500Medium" },
+  chipTextActive: { color: Colors.dark.primary, fontFamily: "Inter_600SemiBold" },
   typeChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 8,
-    backgroundColor: Colors.dark.surface,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
+    paddingHorizontal: 12, paddingVertical: 5, borderRadius: 8,
+    backgroundColor: Colors.dark.surface, borderWidth: 1, borderColor: Colors.dark.border,
   },
-  typeChipActive: {
-    backgroundColor: Colors.dark.secondaryLight,
-    borderColor: Colors.dark.secondary,
-  },
-  typeChipText: {
-    color: Colors.dark.textSecondary,
-    fontSize: 12,
-    fontFamily: "Inter_500Medium",
-  },
-  typeChipTextActive: {
-    color: Colors.dark.secondary,
-    fontFamily: "Inter_600SemiBold",
-  },
-  errorContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingTop: 60,
-    gap: 12,
-  },
-  errorTitle: {
-    color: Colors.dark.text,
-    fontSize: 18,
-    fontFamily: "Inter_600SemiBold",
-  },
-  errorText: {
-    color: Colors.dark.textSecondary,
-    fontSize: 14,
-    fontFamily: "Inter_400Regular",
-    textAlign: "center",
-  },
+  typeChipActive: { backgroundColor: Colors.dark.secondaryLight, borderColor: Colors.dark.secondary },
+  typeChipText: { color: Colors.dark.textSecondary, fontSize: 12, fontFamily: "Inter_500Medium" },
+  typeChipTextActive: { color: Colors.dark.secondary, fontFamily: "Inter_600SemiBold" },
+  errorContainer: { alignItems: "center", justifyContent: "center", paddingTop: 60, gap: 12 },
+  errorTitle: { color: Colors.dark.text, fontSize: 18, fontFamily: "Inter_600SemiBold" },
+  errorText: { color: Colors.dark.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center" },
 });

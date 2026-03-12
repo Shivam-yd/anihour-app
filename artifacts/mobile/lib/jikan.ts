@@ -1,3 +1,5 @@
+import { ContentType } from "./content-settings";
+
 const BASE_URL = "https://api.jikan.moe/v4";
 
 export interface AnimeImage {
@@ -33,28 +35,26 @@ export interface Anime {
   rank?: number;
   popularity?: number;
   episodes?: number;
+  chapters?: number;
+  volumes?: number;
   status?: string;
   synopsis?: string;
   genres?: AnimeGenre[];
   studios?: AnimeStudio[];
+  authors?: { mal_id: number; name: string }[];
   year?: number;
   season?: string;
   type?: string;
   rating?: string;
   duration?: string;
   source?: string;
-  aired?: {
-    from?: string;
-    to?: string;
-  };
+  aired?: { from?: string; to?: string };
+  published?: { from?: string; to?: string };
   trailer?: {
     youtube_id?: string;
     url?: string;
     embed_url?: string;
-    images?: {
-      maximum_image_url?: string;
-      large_image_url?: string;
-    };
+    images?: { maximum_image_url?: string; large_image_url?: string };
   };
   members?: number;
   favorites?: number;
@@ -68,11 +68,7 @@ export interface NewsItem {
   url: string;
   date: string;
   author_username: string;
-  images: {
-    jpg: {
-      image_url: string;
-    };
-  };
+  images: { jpg: { image_url: string } };
   comments: number;
   tags?: string[];
   badge?: string;
@@ -81,9 +77,7 @@ export interface NewsItem {
 async function fetchWithRetry(url: string, retries = 2): Promise<unknown> {
   for (let i = 0; i <= retries; i++) {
     try {
-      const res = await fetch(url, {
-        headers: { Accept: "application/json" },
-      });
+      const res = await fetch(url, { headers: { Accept: "application/json" } });
       if (res.status === 429) {
         await new Promise((r) => setTimeout(r, 1200 * (i + 1)));
         continue;
@@ -97,30 +91,60 @@ async function fetchWithRetry(url: string, retries = 2): Promise<unknown> {
   }
 }
 
-export async function fetchSeasonNow(page = 1): Promise<Anime[]> {
-  const data = (await fetchWithRetry(
-    `${BASE_URL}/seasons/now?page=${page}&limit=25`
-  )) as { data: Anime[] };
+export async function fetchSeasonNow(
+  page = 1,
+  contentType: ContentType = "anime",
+  isAdult = false
+): Promise<Anime[]> {
+  let url: string;
+  if (isAdult) {
+    const status = contentType === "manga" ? "publishing" : "airing";
+    url = `${BASE_URL}/${contentType}?status=${status}&genres=12&sfw=false&order_by=score&sort=desc&page=${page}&limit=25`;
+  } else if (contentType === "manga") {
+    url = `${BASE_URL}/manga?status=publishing&order_by=score&sort=desc&page=${page}&limit=25&sfw=true`;
+  } else {
+    url = `${BASE_URL}/seasons/now?page=${page}&limit=25`;
+  }
+  const data = (await fetchWithRetry(url)) as { data: Anime[] };
   return data.data ?? [];
 }
 
 export async function fetchTopAnime(
   page = 1,
   filter = "bypopularity",
-  type?: string
+  type?: string,
+  contentType: ContentType = "anime",
+  isAdult = false
 ): Promise<Anime[]> {
-  const typeParam = type ? `&type=${type}` : "";
-  const filterParam = filter ? `&filter=${filter}` : "";
-  const data = (await fetchWithRetry(
-    `${BASE_URL}/top/anime?page=${page}&limit=25${filterParam}${typeParam}`
-  )) as { data: Anime[] };
+  let url: string;
+  if (isAdult) {
+    const typeParam = type ? `&type=${type}` : "";
+    url = `${BASE_URL}/${contentType}?genres=12&sfw=false${typeParam}&order_by=score&sort=desc&page=${page}&limit=25`;
+  } else if (contentType === "manga") {
+    url = `${BASE_URL}/top/manga?page=${page}&limit=25`;
+  } else {
+    const typeParam = type ? `&type=${type}` : "";
+    const filterParam = filter ? `&filter=${filter}` : "";
+    url = `${BASE_URL}/top/anime?page=${page}&limit=25${filterParam}${typeParam}`;
+  }
+  const data = (await fetchWithRetry(url)) as { data: Anime[] };
   return data.data ?? [];
 }
 
-export async function fetchUpcoming(page = 1): Promise<Anime[]> {
-  const data = (await fetchWithRetry(
-    `${BASE_URL}/seasons/upcoming?page=${page}&limit=25`
-  )) as { data: Anime[] };
+export async function fetchUpcoming(
+  page = 1,
+  contentType: ContentType = "anime",
+  isAdult = false
+): Promise<Anime[]> {
+  let url: string;
+  if (isAdult) {
+    url = `${BASE_URL}/${contentType}?genres=12&sfw=false&status=not_yet_aired&order_by=start_date&sort=asc&page=${page}&limit=25`;
+  } else if (contentType === "manga") {
+    url = `${BASE_URL}/manga?status=not_yet_published&order_by=start_date&sort=asc&page=${page}&limit=25&sfw=true`;
+  } else {
+    url = `${BASE_URL}/seasons/upcoming?page=${page}&limit=25`;
+  }
+  const data = (await fetchWithRetry(url)) as { data: Anime[] };
   return data.data ?? [];
 }
 
@@ -187,22 +211,32 @@ export async function fetchAnimeNews(): Promise<NewsItem[]> {
         });
       }
     }
-  } catch {
-  }
+  } catch {}
 
   return newsItems;
 }
 
 export async function fetchAnimeById(id: number): Promise<Anime | null> {
-  const data = (await fetchWithRetry(`${BASE_URL}/anime/${id}/full`)) as {
-    data: Anime;
-  };
+  const data = (await fetchWithRetry(`${BASE_URL}/anime/${id}/full`)) as { data: Anime };
   return data.data ?? null;
 }
 
-export async function searchAnime(query: string, page = 1): Promise<Anime[]> {
-  const data = (await fetchWithRetry(
-    `${BASE_URL}/anime?q=${encodeURIComponent(query)}&page=${page}&limit=20&sfw=true`
-  )) as { data: Anime[] };
+export async function fetchMangaById(id: number): Promise<Anime | null> {
+  const data = (await fetchWithRetry(`${BASE_URL}/manga/${id}/full`)) as { data: Anime };
+  return data.data ?? null;
+}
+
+export async function searchContent(
+  query: string,
+  page = 1,
+  contentType: ContentType = "anime",
+  isAdult = false
+): Promise<Anime[]> {
+  const sfwParam = isAdult ? "sfw=false" : "sfw=true";
+  const adultGenre = isAdult ? "&genres=12" : "";
+  const url = `${BASE_URL}/${contentType}?q=${encodeURIComponent(query)}&page=${page}&limit=20&${sfwParam}${adultGenre}`;
+  const data = (await fetchWithRetry(url)) as { data: Anime[] };
   return data.data ?? [];
 }
+
+export { searchContent as searchAnime };
