@@ -142,7 +142,7 @@ export async function fetchUpcoming(
   if (isAdult) {
     url = `${BASE_URL}/${contentType}?genres=12&sfw=false&status=not_yet_aired&order_by=start_date&sort=asc&page=${page}&limit=25`;
   } else if (contentType === "manga") {
-    url = `${BASE_URL}/manga?status=not_yet_published&order_by=start_date&sort=asc&page=${page}&limit=25&sfw=true`;
+    url = `${BASE_URL}/top/manga?filter=upcoming&page=${page}&limit=25`;
   } else {
     url = `${BASE_URL}/seasons/upcoming?page=${page}&limit=25`;
   }
