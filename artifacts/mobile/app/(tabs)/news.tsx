@@ -2,6 +2,7 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import {
+  ActivityIndicator,
   FlatList,
   Platform,
   RefreshControl,
@@ -14,14 +15,15 @@ import { useQuery } from "@tanstack/react-query";
 
 import { NewsCard } from "@/components/NewsCard";
 import Colors from "@/constants/colors";
-import { fetchAnimeNews } from "@/lib/jikan";
+import { fetchAnimeNews, NewsItem } from "@/lib/jikan";
 
 export default function NewsScreen() {
   const insets = useSafeAreaInsets();
 
-  const { data: articles, isLoading, isError, refetch, isRefetching } = useQuery({
+  const { data: articles, isLoading, isError, refetch, isRefetching } = useQuery<NewsItem[]>({
     queryKey: ["anime-news"],
-    queryFn: () => fetchAnimeNews(1),
+    queryFn: () => fetchAnimeNews(),
+    staleTime: 10 * 60 * 1000,
   });
 
   const renderHeader = () => (
@@ -45,10 +47,9 @@ export default function NewsScreen() {
     return (
       <View style={styles.container}>
         {renderHeader()}
-        <View style={styles.skeletons}>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <View key={i} style={styles.skeletonCard} />
-          ))}
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={Colors.dark.warning} />
+          <Text style={styles.loadingText}>Loading news...</Text>
         </View>
       </View>
     );
@@ -71,7 +72,7 @@ export default function NewsScreen() {
     <View style={styles.container}>
       <FlatList
         data={articles ?? []}
-        keyExtractor={(item) => `${item.mal_id}`}
+        keyExtractor={(item, index) => `news-${item.mal_id}-${index}`}
         ListHeaderComponent={renderHeader}
         renderItem={({ item }) => <NewsCard article={item} />}
         contentContainerStyle={{
@@ -84,6 +85,7 @@ export default function NewsScreen() {
         }
         ListEmptyComponent={
           <View style={styles.errorContainer}>
+            <Feather name="inbox" size={48} color={Colors.dark.textTertiary} />
             <Text style={styles.errorText}>No news articles found</Text>
           </View>
         }
@@ -127,15 +129,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.dark.warning,
   },
-  skeletons: {
-    paddingTop: 8,
-    gap: 10,
-    paddingHorizontal: 16,
+  centered: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
   },
-  skeletonCard: {
-    height: 120,
-    backgroundColor: Colors.dark.surface,
-    borderRadius: 14,
+  loadingText: {
+    color: Colors.dark.textSecondary,
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
   },
   errorContainer: {
     flex: 1,

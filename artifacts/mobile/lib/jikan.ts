@@ -58,23 +58,24 @@ export interface Anime {
   };
   members?: number;
   favorites?: number;
+  url?: string;
 }
 
-export interface NewsArticle {
+export interface NewsItem {
   mal_id: number;
   title: string;
+  excerpt: string;
+  url: string;
   date: string;
   author_username: string;
-  forum_url: string;
-  url: string;
   images: {
     jpg: {
       image_url: string;
     };
   };
   comments: number;
-  excerpt: string;
   tags?: string[];
+  badge?: string;
 }
 
 async function fetchWithRetry(url: string, retries = 2): Promise<unknown> {
@@ -84,14 +85,14 @@ async function fetchWithRetry(url: string, retries = 2): Promise<unknown> {
         headers: { Accept: "application/json" },
       });
       if (res.status === 429) {
-        await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
+        await new Promise((r) => setTimeout(r, 1200 * (i + 1)));
         continue;
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch (e) {
       if (i === retries) throw e;
-      await new Promise((r) => setTimeout(r, 500 * (i + 1)));
+      await new Promise((r) => setTimeout(r, 600 * (i + 1)));
     }
   }
 }
@@ -109,8 +110,9 @@ export async function fetchTopAnime(
   type?: string
 ): Promise<Anime[]> {
   const typeParam = type ? `&type=${type}` : "";
+  const filterParam = filter ? `&filter=${filter}` : "";
   const data = (await fetchWithRetry(
-    `${BASE_URL}/top/anime?page=${page}&limit=25&filter=${filter}${typeParam}`
+    `${BASE_URL}/top/anime?page=${page}&limit=25${filterParam}${typeParam}`
   )) as { data: Anime[] };
   return data.data ?? [];
 }
@@ -122,11 +124,73 @@ export async function fetchUpcoming(page = 1): Promise<Anime[]> {
   return data.data ?? [];
 }
 
-export async function fetchAnimeNews(page = 1): Promise<NewsArticle[]> {
-  const data = (await fetchWithRetry(
-    `${BASE_URL}/anime/news?page=${page}&limit=20`
-  )) as { data: NewsArticle[] };
-  return data.data ?? [];
+export async function fetchAnimeNews(): Promise<NewsItem[]> {
+  const now = new Date().toISOString();
+  const newsItems: NewsItem[] = [];
+
+  try {
+    const [seasonRes, recentRes, trendingRes] = await Promise.allSettled([
+      fetchWithRetry(`${BASE_URL}/seasons/now?limit=8`) as Promise<{ data: Anime[] }>,
+      fetchWithRetry(`${BASE_URL}/anime?order_by=start_date&sort=desc&limit=8&sfw=true`) as Promise<{ data: Anime[] }>,
+      fetchWithRetry(`${BASE_URL}/top/anime?filter=airing&limit=5`) as Promise<{ data: Anime[] }>,
+    ]);
+
+    if (seasonRes.status === "fulfilled" && seasonRes.value?.data) {
+      for (const anime of seasonRes.value.data.slice(0, 5)) {
+        const synopsis = anime.synopsis ?? "No description available.";
+        newsItems.push({
+          mal_id: anime.mal_id,
+          title: `Now Airing: ${anime.title}`,
+          excerpt: synopsis.length > 160 ? synopsis.slice(0, 160) + "…" : synopsis,
+          url: anime.url ?? `https://myanimelist.net/anime/${anime.mal_id}`,
+          date: anime.aired?.from ?? now,
+          author_username: "AnimeNews",
+          images: anime.images,
+          comments: 0,
+          badge: "AIRING",
+        });
+      }
+    }
+
+    await new Promise((r) => setTimeout(r, 400));
+
+    if (recentRes.status === "fulfilled" && recentRes.value?.data) {
+      for (const anime of recentRes.value.data.slice(0, 5)) {
+        const synopsis = anime.synopsis ?? "No description available.";
+        newsItems.push({
+          mal_id: anime.mal_id * 100 + 1,
+          title: `New Addition: ${anime.title}`,
+          excerpt: synopsis.length > 160 ? synopsis.slice(0, 160) + "…" : synopsis,
+          url: anime.url ?? `https://myanimelist.net/anime/${anime.mal_id}`,
+          date: now,
+          author_username: "AnimeNews",
+          images: anime.images,
+          comments: 0,
+          badge: "NEW",
+        });
+      }
+    }
+
+    if (trendingRes.status === "fulfilled" && trendingRes.value?.data) {
+      for (const anime of trendingRes.value.data.slice(0, 3)) {
+        const synopsis = anime.synopsis ?? "No description available.";
+        newsItems.push({
+          mal_id: anime.mal_id * 100 + 2,
+          title: `Trending: ${anime.title}`,
+          excerpt: `Rated ${anime.score ?? "N/A"}/10 — ${synopsis.length > 130 ? synopsis.slice(0, 130) + "…" : synopsis}`,
+          url: anime.url ?? `https://myanimelist.net/anime/${anime.mal_id}`,
+          date: now,
+          author_username: "AnimeNews",
+          images: anime.images,
+          comments: 0,
+          badge: "TRENDING",
+        });
+      }
+    }
+  } catch {
+  }
+
+  return newsItems;
 }
 
 export async function fetchAnimeById(id: number): Promise<Anime | null> {

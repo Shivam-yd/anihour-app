@@ -18,12 +18,12 @@ import { SkeletonWideCard } from "@/components/SkeletonCard";
 import Colors from "@/constants/colors";
 import { fetchTopAnime } from "@/lib/jikan";
 
-type Filter = "bypopularity" | "byrank" | "airing" | "upcoming" | "favorite";
+type Filter = "bypopularity" | "" | "airing" | "upcoming" | "favorite";
 type AnimeType = "all" | "tv" | "movie" | "ova" | "special" | "ona";
 
 const FILTERS: { key: Filter; label: string }[] = [
   { key: "bypopularity", label: "Popular" },
-  { key: "byrank", label: "Top Rated" },
+  { key: "", label: "Top Rated" },
   { key: "airing", label: "Airing" },
   { key: "upcoming", label: "Upcoming" },
   { key: "favorite", label: "Favorites" },

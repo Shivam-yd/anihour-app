@@ -10,18 +10,28 @@ import Animated, {
 } from "react-native-reanimated";
 
 import Colors from "@/constants/colors";
-import { NewsArticle } from "@/lib/jikan";
+import { NewsItem } from "@/lib/jikan";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface Props {
-  article: NewsArticle;
+  article: NewsItem;
 }
 
 function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  } catch {
+    return dateStr;
+  }
 }
+
+const BADGE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
+  AIRING: { bg: Colors.dark.primaryLight, border: Colors.dark.primary, text: Colors.dark.primary },
+  NEW: { bg: Colors.dark.secondaryLight, border: Colors.dark.secondary, text: Colors.dark.secondary },
+  TRENDING: { bg: Colors.dark.warningLight, border: Colors.dark.warning, text: Colors.dark.warning },
+};
 
 export function NewsCard({ article }: Props) {
   const scale = useSharedValue(1);
@@ -37,6 +47,7 @@ export function NewsCard({ article }: Props) {
   }, [article.url]);
 
   const imageUrl = article.images?.jpg?.image_url;
+  const badgeStyle = article.badge ? (BADGE_COLORS[article.badge] ?? BADGE_COLORS.AIRING) : null;
 
   return (
     <AnimatedPressable
@@ -54,10 +65,13 @@ export function NewsCard({ article }: Props) {
       )}
 
       <View style={styles.content}>
-        <View style={styles.meta}>
+        <View style={styles.topRow}>
+          {badgeStyle && article.badge ? (
+            <View style={[styles.badge, { backgroundColor: badgeStyle.bg, borderColor: badgeStyle.border }]}>
+              <Text style={[styles.badgeText, { color: badgeStyle.text }]}>{article.badge}</Text>
+            </View>
+          ) : null}
           <Text style={styles.date}>{formatDate(article.date)}</Text>
-          <View style={styles.dot} />
-          <Text style={styles.author} numberOfLines={1}>{article.author_username}</Text>
         </View>
 
         <Text style={styles.title} numberOfLines={3}>{article.title}</Text>
@@ -67,12 +81,6 @@ export function NewsCard({ article }: Props) {
         ) : null}
 
         <View style={styles.footer}>
-          {article.comments > 0 && (
-            <View style={styles.commentsRow}>
-              <Feather name="message-circle" size={12} color={Colors.dark.textTertiary} />
-              <Text style={styles.commentsText}>{article.comments}</Text>
-            </View>
-          )}
           <View style={styles.readMore}>
             <Text style={styles.readMoreText}>Read more</Text>
             <Feather name="external-link" size={12} color={Colors.dark.secondary} />
@@ -96,11 +104,11 @@ const styles = StyleSheet.create({
   },
   image: {
     width: 100,
-    height: 120,
+    height: 130,
   },
   imagePlaceholder: {
     width: 100,
-    height: 120,
+    height: 130,
     backgroundColor: Colors.dark.surfaceElevated,
     alignItems: "center",
     justifyContent: "center",
@@ -110,57 +118,46 @@ const styles = StyleSheet.create({
     padding: 12,
     justifyContent: "space-between",
   },
-  meta: {
+  topRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 8,
+    marginBottom: 5,
+  },
+  badge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+  },
+  badgeText: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.5,
   },
   date: {
-    color: Colors.dark.primary,
-    fontSize: 11,
-    fontFamily: "Inter_500Medium",
-  },
-  dot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: Colors.dark.textTertiary,
-  },
-  author: {
-    color: Colors.dark.textSecondary,
+    color: Colors.dark.textTertiary,
     fontSize: 11,
     fontFamily: "Inter_400Regular",
-    flexShrink: 1,
   },
   title: {
     color: Colors.dark.text,
     fontSize: 13,
     fontFamily: "Inter_600SemiBold",
     lineHeight: 18,
-    marginTop: 4,
+    marginBottom: 4,
   },
   excerpt: {
     color: Colors.dark.textSecondary,
     fontSize: 12,
     fontFamily: "Inter_400Regular",
     lineHeight: 16,
-    marginTop: 3,
   },
   footer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     marginTop: 6,
-  },
-  commentsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  commentsText: {
-    color: Colors.dark.textTertiary,
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
   },
   readMore: {
     flexDirection: "row",
