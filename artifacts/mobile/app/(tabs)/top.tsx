@@ -22,15 +22,21 @@ import { fetchTopAnime } from "@/lib/jikan";
 
 type Filter = "bypopularity" | "" | "airing" | "upcoming";
 type AnimeType = "all" | "tv" | "movie" | "ova" | "special" | "ona";
+type MangaType = "all" | "manga" | "manhwa" | "manhua" | "novel" | "oneshot";
 
-const FILTERS: { key: Filter; label: string }[] = [
+const ANIME_FILTERS: { key: Filter; label: string }[] = [
   { key: "bypopularity", label: "Popular" },
   { key: "", label: "Top Rated" },
   { key: "airing", label: "Airing" },
   { key: "upcoming", label: "Upcoming" },
 ];
 
-const TYPES: { key: AnimeType; label: string }[] = [
+const MANGA_FILTERS: { key: Filter; label: string }[] = [
+  { key: "bypopularity", label: "Popular" },
+  { key: "", label: "Top Rated" },
+];
+
+const ANIME_TYPES: { key: AnimeType; label: string }[] = [
   { key: "all", label: "All" },
   { key: "tv", label: "TV" },
   { key: "movie", label: "Movie" },
@@ -39,17 +45,30 @@ const TYPES: { key: AnimeType; label: string }[] = [
   { key: "ona", label: "ONA" },
 ];
 
+const MANGA_TYPES: { key: MangaType; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "manga", label: "Manga" },
+  { key: "manhwa", label: "Manhwa" },
+  { key: "manhua", label: "Manhua" },
+  { key: "novel", label: "Novel" },
+  { key: "oneshot", label: "One-Shot" },
+];
+
 export default function TopScreen() {
   const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<Filter>("bypopularity");
   const [animeType, setAnimeType] = useState<AnimeType>("all");
+  const [mangaType, setMangaType] = useState<MangaType>("all");
   const { contentType, isAdultMode } = useContentSettings();
   const isManga = contentType === "manga";
 
+  const activeType = isManga
+    ? (mangaType === "all" ? undefined : mangaType)
+    : (animeType === "all" ? undefined : animeType);
+
   const { data: anime, isLoading, isError, refetch, isRefetching } = useQuery({
-    queryKey: ["top-anime", filter, animeType, contentType, isAdultMode],
-    queryFn: () =>
-      fetchTopAnime(1, filter, animeType === "all" ? undefined : animeType, contentType, isAdultMode),
+    queryKey: ["top-anime", filter, activeType, contentType, isAdultMode],
+    queryFn: () => fetchTopAnime(1, filter, activeType, contentType, isAdultMode),
   });
 
   const renderHeader = () => (
@@ -68,12 +87,12 @@ export default function TopScreen() {
 
       <ContentToggleBar />
 
-      {!isManga && !isAdultMode && (
+      {!isAdultMode && (
         <>
           <View style={styles.filtersRow}>
-            {FILTERS.map((item) => (
+            {(isManga ? MANGA_FILTERS : ANIME_FILTERS).map((item) => (
               <Pressable
-                key={item.key}
+                key={item.key + (isManga ? "-m" : "-a")}
                 style={[styles.chip, filter === item.key && styles.chipActive]}
                 onPress={() => setFilter(item.key)}
               >
@@ -83,15 +102,26 @@ export default function TopScreen() {
           </View>
 
           <View style={styles.typesRow}>
-            {TYPES.map((item) => (
-              <Pressable
-                key={item.key}
-                style={[styles.typeChip, animeType === item.key && styles.typeChipActive]}
-                onPress={() => setAnimeType(item.key)}
-              >
-                <Text style={[styles.typeChipText, animeType === item.key && styles.typeChipTextActive]}>{item.label}</Text>
-              </Pressable>
-            ))}
+            {isManga
+              ? MANGA_TYPES.map((item) => (
+                  <Pressable
+                    key={item.key}
+                    style={[styles.typeChip, mangaType === item.key && styles.typeChipActive]}
+                    onPress={() => setMangaType(item.key)}
+                  >
+                    <Text style={[styles.typeChipText, mangaType === item.key && styles.typeChipTextActive]}>{item.label}</Text>
+                  </Pressable>
+                ))
+              : ANIME_TYPES.map((item) => (
+                  <Pressable
+                    key={item.key}
+                    style={[styles.typeChip, animeType === item.key && styles.typeChipActive]}
+                    onPress={() => setAnimeType(item.key)}
+                  >
+                    <Text style={[styles.typeChipText, animeType === item.key && styles.typeChipTextActive]}>{item.label}</Text>
+                  </Pressable>
+                ))
+            }
           </View>
         </>
       )}

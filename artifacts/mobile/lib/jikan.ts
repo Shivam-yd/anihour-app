@@ -121,7 +121,9 @@ export async function fetchTopAnime(
     const typeParam = type ? `&type=${type}` : "";
     url = `${BASE_URL}/${contentType}?genres=12&sfw=false${typeParam}&order_by=score&sort=desc&page=${page}&limit=25`;
   } else if (contentType === "manga") {
-    url = `${BASE_URL}/top/manga?page=${page}&limit=25`;
+    const filterParam = filter ? `&filter=${filter}` : "";
+    const typeParam = type ? `&type=${type}` : "";
+    url = `${BASE_URL}/top/manga?page=${page}&limit=25${filterParam}${typeParam}`;
   } else {
     const typeParam = type ? `&type=${type}` : "";
     const filterParam = filter ? `&filter=${filter}` : "";
