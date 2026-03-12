@@ -18,7 +18,7 @@ import { SkeletonWideCard } from "@/components/SkeletonCard";
 import Colors from "@/constants/colors";
 import { fetchTopAnime } from "@/lib/jikan";
 
-type Filter = "bypopularity" | "" | "airing" | "upcoming" | "favorite";
+type Filter = "bypopularity" | "" | "airing" | "upcoming";
 type AnimeType = "all" | "tv" | "movie" | "ova" | "special" | "ona";
 
 const FILTERS: { key: Filter; label: string }[] = [
@@ -26,7 +26,6 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "", label: "Top Rated" },
   { key: "airing", label: "Airing" },
   { key: "upcoming", label: "Upcoming" },
-  { key: "favorite", label: "Favorites" },
 ];
 
 const TYPES: { key: AnimeType; label: string }[] = [
@@ -164,7 +163,6 @@ const styles = StyleSheet.create({
   },
   filtersRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     paddingHorizontal: 16,
     paddingBottom: 10,
     gap: 8,
@@ -177,12 +175,13 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    flex: 1,
+    paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: Colors.dark.surface,
     borderWidth: 1,
     borderColor: Colors.dark.border,
+    alignItems: "center",
   },
   chipActive: {
     backgroundColor: Colors.dark.primaryLight,
