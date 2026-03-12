@@ -16,6 +16,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import Colors from "@/constants/colors";
+import { useContentSettings } from "@/lib/content-settings";
 import { Anime } from "@/lib/jikan";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -31,17 +32,20 @@ interface Props {
 
 export function AnimeCard({ anime, rank }: Props) {
   const scale = useSharedValue(1);
+  const { contentType } = useContentSettings();
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
   const handlePress = useCallback(() => {
-    router.push({ pathname: "/anime/[id]", params: { id: anime.mal_id } });
-  }, [anime.mal_id]);
+    router.push({ pathname: "/anime/[id]", params: { id: anime.mal_id, contentType } });
+  }, [anime.mal_id, contentType]);
 
   const title = anime.title_english ?? anime.title;
   const imageUrl = anime.images?.jpg?.large_image_url ?? anime.images?.jpg?.image_url;
+  const count = anime.episodes ?? anime.chapters;
+  const countLabel = anime.chapters !== undefined ? "ch" : "ep";
 
   return (
     <AnimatedPressable
@@ -78,8 +82,8 @@ export function AnimeCard({ anime, rank }: Props) {
             <View style={styles.typePill}>
               <Text style={styles.typeText}>{anime.type}</Text>
             </View>
-            {anime.episodes !== undefined && anime.episodes > 0 && (
-              <Text style={styles.episodes}>{anime.episodes} ep</Text>
+            {count !== undefined && count > 0 && (
+              <Text style={styles.episodes}>{count} {countLabel}</Text>
             )}
           </View>
         )}
@@ -95,17 +99,19 @@ interface WideProps {
 
 export function AnimeCardWide({ anime, index }: WideProps) {
   const scale = useSharedValue(1);
+  const { contentType } = useContentSettings();
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
   const handlePress = useCallback(() => {
-    router.push({ pathname: "/anime/[id]", params: { id: anime.mal_id } });
-  }, [anime.mal_id]);
+    router.push({ pathname: "/anime/[id]", params: { id: anime.mal_id, contentType } });
+  }, [anime.mal_id, contentType]);
 
   const title = anime.title_english ?? anime.title;
   const imageUrl = anime.images?.jpg?.large_image_url ?? anime.images?.jpg?.image_url;
+  const isManga = contentType === "manga";
 
   return (
     <AnimatedPressable
@@ -142,8 +148,19 @@ export function AnimeCardWide({ anime, index }: WideProps) {
         <Text style={styles.wideTitle} numberOfLines={2}>{title}</Text>
 
         <View style={styles.wideMeta}>
-          {anime.episodes !== undefined && anime.episodes > 0 && (
-            <Text style={styles.wideEpisodes}>{anime.episodes} eps</Text>
+          {isManga ? (
+            <>
+              {anime.chapters !== undefined && anime.chapters > 0 && (
+                <Text style={styles.wideEpisodes}>{anime.chapters} ch</Text>
+              )}
+              {anime.volumes !== undefined && anime.volumes > 0 && (
+                <Text style={styles.wideEpisodes}>{anime.volumes} vol</Text>
+              )}
+            </>
+          ) : (
+            anime.episodes !== undefined && anime.episodes > 0 && (
+              <Text style={styles.wideEpisodes}>{anime.episodes} eps</Text>
+            )
           )}
           {anime.status && (
             <Text style={styles.wideStatus} numberOfLines={1}>{anime.status}</Text>
@@ -170,10 +187,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.dark.border,
   },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
+  image: { width: "100%", height: "100%" },
   gradient: {
     position: "absolute",
     bottom: 0,
@@ -191,11 +205,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 7,
     paddingVertical: 3,
   },
-  rankText: {
-    color: "#fff",
-    fontSize: 11,
-    fontFamily: "Inter_700Bold",
-  },
+  rankText: { color: "#fff", fontSize: 11, fontFamily: "Inter_700Bold" },
   scoreBadge: {
     position: "absolute",
     top: 8,
@@ -210,30 +220,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.dark.border,
   },
-  scoreText: {
-    color: Colors.dark.star,
-    fontSize: 11,
-    fontFamily: "Inter_700Bold",
-  },
-  info: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 10,
-  },
-  title: {
-    color: Colors.dark.text,
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-    lineHeight: 17,
-    marginBottom: 4,
-  },
-  typeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-  },
+  scoreText: { color: Colors.dark.star, fontSize: 11, fontFamily: "Inter_700Bold" },
+  info: { position: "absolute", bottom: 0, left: 0, right: 0, padding: 10 },
+  title: { color: Colors.dark.text, fontSize: 12, fontFamily: "Inter_600SemiBold", lineHeight: 17, marginBottom: 4 },
+  typeRow: { flexDirection: "row", alignItems: "center", gap: 5 },
   typePill: {
     backgroundColor: Colors.dark.primaryLight,
     borderRadius: 4,
@@ -242,16 +232,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.dark.primary,
   },
-  typeText: {
-    color: Colors.dark.primary,
-    fontSize: 9,
-    fontFamily: "Inter_600SemiBold",
-  },
-  episodes: {
-    color: Colors.dark.textSecondary,
-    fontSize: 10,
-    fontFamily: "Inter_400Regular",
-  },
+  typeText: { color: Colors.dark.primary, fontSize: 9, fontFamily: "Inter_600SemiBold" },
+  episodes: { color: Colors.dark.textSecondary, fontSize: 10, fontFamily: "Inter_400Regular" },
 
   wideCard: {
     flexDirection: "row",
@@ -263,21 +245,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.dark.border,
   },
-  wideImage: {
-    width: 90,
-    height: 130,
-  },
-  wideInfo: {
-    flex: 1,
-    padding: 12,
-    justifyContent: "space-between",
-  },
-  wideRankRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    flexWrap: "wrap",
-  },
+  wideImage: { width: 90, height: 130 },
+  wideInfo: { flex: 1, padding: 12, justifyContent: "space-between" },
+  wideRankRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
   rankCircle: {
     width: 26,
     height: 26,
@@ -288,54 +258,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.dark.primary,
   },
-  rankCircleText: {
-    color: Colors.dark.primary,
-    fontSize: 11,
-    fontFamily: "Inter_700Bold",
-  },
-  scoreRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-  },
-  scoreTextWide: {
-    color: Colors.dark.star,
-    fontSize: 13,
-    fontFamily: "Inter_700Bold",
-  },
-  typePillWide: {
-    marginLeft: "auto",
-  },
+  rankCircleText: { color: Colors.dark.primary, fontSize: 11, fontFamily: "Inter_700Bold" },
+  scoreRow: { flexDirection: "row", alignItems: "center", gap: 3 },
+  scoreTextWide: { color: Colors.dark.star, fontSize: 13, fontFamily: "Inter_700Bold" },
+  typePillWide: { marginLeft: "auto" },
   wideTitle: {
-    color: Colors.dark.text,
-    fontSize: 15,
-    fontFamily: "Inter_600SemiBold",
-    lineHeight: 20,
-    flex: 1,
-    marginVertical: 4,
+    color: Colors.dark.text, fontSize: 15, fontFamily: "Inter_600SemiBold",
+    lineHeight: 20, flex: 1, marginVertical: 4,
   },
-  wideMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  wideEpisodes: {
-    color: Colors.dark.textSecondary,
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-  },
-  wideStatus: {
-    color: Colors.dark.textTertiary,
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    flexShrink: 1,
-  },
-  genres: {
-    color: Colors.dark.secondary,
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    marginTop: 2,
-    opacity: 0.9,
-  },
+  wideMeta: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 },
+  wideEpisodes: { color: Colors.dark.textSecondary, fontSize: 12, fontFamily: "Inter_400Regular" },
+  wideStatus: { color: Colors.dark.textTertiary, fontSize: 11, fontFamily: "Inter_400Regular", flexShrink: 1 },
+  genres: { color: Colors.dark.secondary, fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2, opacity: 0.9 },
 });

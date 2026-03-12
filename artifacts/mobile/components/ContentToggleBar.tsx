@@ -10,29 +10,35 @@ export function ContentToggleBar() {
 
   return (
     <View style={styles.bar}>
-      {/* Anime / Manga segmented pill */}
+      {/* Segmented Anime / Manga control */}
       <View style={styles.segmented}>
-        <View style={[styles.segmentedIndicator, !isAnime && styles.segmentedIndicatorRight]} />
-        <Pressable style={styles.segment} onPress={() => !isAnime && toggleContentType()}>
-          <Text style={[styles.segmentText, isAnime && styles.segmentTextActive]}>
+        <Pressable
+          style={[styles.segment, styles.segmentLeft, isAnime && styles.segmentActiveAnime]}
+          onPress={() => !isAnime && toggleContentType()}
+        >
+          <Text style={[styles.segmentText, isAnime && styles.segmentTextAnime]}>
             Anime
           </Text>
         </Pressable>
-        <Pressable style={styles.segment} onPress={() => isAnime && toggleContentType()}>
-          <Text style={[styles.segmentText, !isAnime && styles.segmentTextActiveManga]}>
+
+        <View style={styles.divider} />
+
+        <Pressable
+          style={[styles.segment, styles.segmentRight, !isAnime && styles.segmentActiveManga]}
+          onPress={() => isAnime && toggleContentType()}
+        >
+          <Text style={[styles.segmentText, !isAnime && styles.segmentTextManga]}>
             Manga
           </Text>
         </Pressable>
       </View>
 
-      {/* 18+ toggle button */}
+      {/* 18+ toggle */}
       <Pressable
         style={[styles.adultBtn, isAdultMode && styles.adultBtnActive]}
         onPress={toggleAdultMode}
       >
-        <Text style={[styles.adultText, isAdultMode && styles.adultTextActive]}>
-          18+
-        </Text>
+        <Text style={[styles.adultText, isAdultMode && styles.adultTextActive]}>18+</Text>
       </Pressable>
     </View>
   );
@@ -52,49 +58,47 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: Colors.dark.border,
-    padding: 3,
-    position: "relative",
-    alignItems: "center",
-  },
-  segmentedIndicator: {
-    position: "absolute",
-    left: 3,
-    top: 3,
-    bottom: 3,
-    width: "50%",
-    backgroundColor: Colors.dark.primaryLight,
-    borderRadius: 7,
-    borderWidth: 1,
-    borderColor: Colors.dark.primary,
-  },
-  segmentedIndicatorRight: {
-    left: undefined,
-    right: 3,
-    backgroundColor: Colors.dark.secondaryLight,
-    borderColor: Colors.dark.secondary,
+    overflow: "hidden",
   },
   segment: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 7,
+    paddingHorizontal: 22,
+    paddingVertical: 8,
     alignItems: "center",
-    zIndex: 1,
+    justifyContent: "center",
+  },
+  segmentLeft: {
+    borderTopLeftRadius: 9,
+    borderBottomLeftRadius: 9,
+  },
+  segmentRight: {
+    borderTopRightRadius: 9,
+    borderBottomRightRadius: 9,
+  },
+  segmentActiveAnime: {
+    backgroundColor: Colors.dark.primaryLight,
+  },
+  segmentActiveManga: {
+    backgroundColor: Colors.dark.secondaryLight,
   },
   segmentText: {
     color: Colors.dark.textTertiary,
     fontSize: 13,
     fontFamily: "Inter_500Medium",
   },
-  segmentTextActive: {
+  segmentTextAnime: {
     color: Colors.dark.primary,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Inter_700Bold",
   },
-  segmentTextActiveManga: {
+  segmentTextManga: {
     color: Colors.dark.secondary,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Inter_700Bold",
+  },
+  divider: {
+    width: 1,
+    backgroundColor: Colors.dark.border,
   },
   adultBtn: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 9,
     borderRadius: 10,
     backgroundColor: Colors.dark.surface,
@@ -102,8 +106,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.dark.border,
   },
   adultBtnActive: {
-    backgroundColor: "rgba(255,107,107,0.15)",
-    borderColor: "#ff6b6b",
+    backgroundColor: "rgba(239,68,68,0.15)",
+    borderColor: "#ef4444",
   },
   adultText: {
     color: Colors.dark.textTertiary,
@@ -112,6 +116,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   adultTextActive: {
-    color: "#ff6b6b",
+    color: "#ef4444",
   },
 });
