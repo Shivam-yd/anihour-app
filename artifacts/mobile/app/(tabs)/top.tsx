@@ -6,6 +6,7 @@ import {
   Platform,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -65,37 +66,37 @@ export default function TopScreen() {
         </View>
       </LinearGradient>
 
-      <FlatList
+      <ScrollView
         horizontal
-        data={FILTERS}
-        keyExtractor={(f) => f.key}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.filtersRow}
-        renderItem={({ item }) => (
+      >
+        {FILTERS.map((item) => (
           <Pressable
+            key={item.key}
             style={[styles.chip, filter === item.key && styles.chipActive]}
             onPress={() => setFilter(item.key)}
           >
             <Text style={[styles.chipText, filter === item.key && styles.chipTextActive]}>{item.label}</Text>
           </Pressable>
-        )}
-      />
+        ))}
+      </ScrollView>
 
-      <FlatList
+      <ScrollView
         horizontal
-        data={TYPES}
-        keyExtractor={(t) => t.key}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.typesRow}
-        renderItem={({ item }) => (
+      >
+        {TYPES.map((item) => (
           <Pressable
+            key={item.key}
             style={[styles.typeChip, animeType === item.key && styles.typeChipActive]}
             onPress={() => setAnimeType(item.key)}
           >
             <Text style={[styles.typeChipText, animeType === item.key && styles.typeChipTextActive]}>{item.label}</Text>
           </Pressable>
-        )}
-      />
+        ))}
+      </ScrollView>
 
       {isLoading && (
         <View>{Array.from({ length: 6 }).map((_, i) => <SkeletonWideCard key={i} />)}</View>
@@ -171,14 +172,20 @@ const styles = StyleSheet.create({
     borderColor: Colors.dark.secondary,
   },
   filtersRow: {
-    paddingHorizontal: 16,
+    paddingLeft: 16,
+    paddingRight: 16,
     paddingBottom: 8,
     gap: 8,
+    flexDirection: "row",
+    alignItems: "center",
   },
   typesRow: {
-    paddingHorizontal: 16,
+    paddingLeft: 16,
+    paddingRight: 16,
     paddingBottom: 12,
     gap: 7,
+    flexDirection: "row",
+    alignItems: "center",
   },
   chip: {
     paddingHorizontal: 14,
