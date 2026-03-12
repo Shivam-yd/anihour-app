@@ -19,7 +19,7 @@ import Colors from "@/constants/colors";
 
 SplashScreen.preventAutoHideAsync();
 
-const SPLASH_MIN_MS = 2800;
+const SPLASH_MIN_MS = 2000;
 
 const queryClient = new QueryClient({
   defaultOptions: {
