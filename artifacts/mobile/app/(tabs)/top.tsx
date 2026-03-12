@@ -6,7 +6,6 @@ import {
   Platform,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -66,11 +65,7 @@ export default function TopScreen() {
         </View>
       </LinearGradient>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filtersRow}
-      >
+      <View style={styles.filtersRow}>
         {FILTERS.map((item) => (
           <Pressable
             key={item.key}
@@ -80,13 +75,9 @@ export default function TopScreen() {
             <Text style={[styles.chipText, filter === item.key && styles.chipTextActive]}>{item.label}</Text>
           </Pressable>
         ))}
-      </ScrollView>
+      </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.typesRow}
-      >
+      <View style={styles.typesRow}>
         {TYPES.map((item) => (
           <Pressable
             key={item.key}
@@ -96,7 +87,7 @@ export default function TopScreen() {
             <Text style={[styles.typeChipText, animeType === item.key && styles.typeChipTextActive]}>{item.label}</Text>
           </Pressable>
         ))}
-      </ScrollView>
+      </View>
 
       {isLoading && (
         <View>{Array.from({ length: 6 }).map((_, i) => <SkeletonWideCard key={i} />)}</View>
@@ -172,20 +163,18 @@ const styles = StyleSheet.create({
     borderColor: Colors.dark.secondary,
   },
   filtersRow: {
-    paddingLeft: 16,
-    paddingRight: 16,
-    paddingBottom: 8,
-    gap: 8,
     flexDirection: "row",
-    alignItems: "center",
+    flexWrap: "wrap",
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    gap: 8,
   },
   typesRow: {
-    paddingLeft: 16,
-    paddingRight: 16,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: 16,
     paddingBottom: 12,
     gap: 7,
-    flexDirection: "row",
-    alignItems: "center",
   },
   chip: {
     paddingHorizontal: 14,
