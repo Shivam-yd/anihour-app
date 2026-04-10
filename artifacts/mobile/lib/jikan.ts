@@ -103,7 +103,7 @@ export async function fetchSeasonNow(
   } else if (contentType === "manga") {
     url = `${BASE_URL}/manga?status=publishing&order_by=score&sort=desc&page=${page}&limit=25&sfw=true`;
   } else {
-    url = `${BASE_URL}/seasons/now?page=${page}&limit=25`;
+    url = `${BASE_URL}/seasons/now?page=${page}&limit=25&sfw=true`;
   }
   const data = (await fetchWithRetry(url)) as { data: Anime[] };
   return data.data ?? [];
@@ -123,11 +123,11 @@ export async function fetchTopAnime(
   } else if (contentType === "manga") {
     const filterParam = filter ? `&filter=${filter}` : "";
     const typeParam = type ? `&type=${type}` : "";
-    url = `${BASE_URL}/top/manga?page=${page}&limit=25${filterParam}${typeParam}`;
+    url = `${BASE_URL}/top/manga?page=${page}&limit=25${filterParam}${typeParam}&sfw=true`;
   } else {
     const typeParam = type ? `&type=${type}` : "";
     const filterParam = filter ? `&filter=${filter}` : "";
-    url = `${BASE_URL}/top/anime?page=${page}&limit=25${filterParam}${typeParam}`;
+    url = `${BASE_URL}/top/anime?page=${page}&limit=25${filterParam}${typeParam}&sfw=true`;
   }
   const data = (await fetchWithRetry(url)) as { data: Anime[] };
   return data.data ?? [];
@@ -144,7 +144,7 @@ export async function fetchUpcoming(
   } else if (contentType === "manga") {
     url = `${BASE_URL}/top/manga?filter=upcoming&page=${page}&limit=25`;
   } else {
-    url = `${BASE_URL}/seasons/upcoming?page=${page}&limit=25`;
+    url = `${BASE_URL}/seasons/upcoming?page=${page}&limit=25&sfw=true`;
   }
   const data = (await fetchWithRetry(url)) as { data: Anime[] };
   return data.data ?? [];

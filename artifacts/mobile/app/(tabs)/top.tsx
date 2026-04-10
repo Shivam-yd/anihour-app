@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FlatList,
   Platform,
@@ -62,13 +62,24 @@ export default function TopScreen() {
   const { contentType, isAdultMode } = useContentSettings();
   const isManga = contentType === "manga";
 
+  // Reset filters whenever content type or adult mode changes
+  useEffect(() => {
+    setFilter("bypopularity");
+    setAnimeType("all");
+    setMangaType("all");
+  }, [contentType, isAdultMode]);
+
+  // Manga only supports bypopularity and top-rated (no airing/upcoming)
+  const safeFilter: Filter =
+    isManga && (filter === "airing" || filter === "upcoming") ? "bypopularity" : filter;
+
   const activeType = isManga
     ? (mangaType === "all" ? undefined : mangaType)
     : (animeType === "all" ? undefined : animeType);
 
   const { data: anime, isLoading, isError, refetch, isRefetching } = useQuery({
-    queryKey: ["top-anime", filter, activeType, contentType, isAdultMode],
-    queryFn: () => fetchTopAnime(1, filter, activeType, contentType, isAdultMode),
+    queryKey: ["top-anime", safeFilter, activeType, contentType, isAdultMode],
+    queryFn: () => fetchTopAnime(1, safeFilter, activeType, contentType, isAdultMode),
   });
 
   const renderHeader = () => (
@@ -93,10 +104,10 @@ export default function TopScreen() {
             {(isManga ? MANGA_FILTERS : ANIME_FILTERS).map((item) => (
               <Pressable
                 key={item.key + (isManga ? "-m" : "-a")}
-                style={[styles.chip, filter === item.key && styles.chipActive]}
+                style={[styles.chip, safeFilter === item.key && styles.chipActive]}
                 onPress={() => setFilter(item.key)}
               >
-                <Text style={[styles.chipText, filter === item.key && styles.chipTextActive]}>{item.label}</Text>
+                <Text style={[styles.chipText, safeFilter === item.key && styles.chipTextActive]}>{item.label}</Text>
               </Pressable>
             ))}
           </View>
