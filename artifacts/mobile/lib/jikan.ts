@@ -74,6 +74,17 @@ export interface NewsItem {
   badge?: string;
 }
 
+const HENTAI_RATING = "Rx - Hentai";
+const HENTAI_GENRE_ID = 12;
+
+function filterSFW(items: Anime[]): Anime[] {
+  return items.filter(
+    (a) =>
+      a.rating !== HENTAI_RATING &&
+      !a.genres?.some((g) => g.mal_id === HENTAI_GENRE_ID)
+  );
+}
+
 async function fetchWithRetry(url: string, retries = 2): Promise<unknown> {
   for (let i = 0; i <= retries; i++) {
     try {
@@ -106,7 +117,8 @@ export async function fetchSeasonNow(
     url = `${BASE_URL}/seasons/now?page=${page}&limit=25&sfw=true`;
   }
   const data = (await fetchWithRetry(url)) as { data: Anime[] };
-  return data.data ?? [];
+  const items = data.data ?? [];
+  return isAdult ? items : filterSFW(items);
 }
 
 export async function fetchTopAnime(
@@ -130,7 +142,8 @@ export async function fetchTopAnime(
     url = `${BASE_URL}/top/anime?page=${page}&limit=25${filterParam}${typeParam}&sfw=true`;
   }
   const data = (await fetchWithRetry(url)) as { data: Anime[] };
-  return data.data ?? [];
+  const items = data.data ?? [];
+  return isAdult ? items : filterSFW(items);
 }
 
 export async function fetchUpcoming(
@@ -147,7 +160,8 @@ export async function fetchUpcoming(
     url = `${BASE_URL}/seasons/upcoming?page=${page}&limit=25&sfw=true`;
   }
   const data = (await fetchWithRetry(url)) as { data: Anime[] };
-  return data.data ?? [];
+  const items = data.data ?? [];
+  return isAdult ? items : filterSFW(items);
 }
 
 export async function fetchAnimeNews(): Promise<NewsItem[]> {
@@ -216,6 +230,43 @@ export async function fetchAnimeNews(): Promise<NewsItem[]> {
   } catch {}
 
   return newsItems;
+}
+
+export interface Character {
+  character: {
+    mal_id: number;
+    name: string;
+    images: { jpg: { image_url: string } };
+  };
+  role: string;
+}
+
+export async function fetchRecommendations(
+  id: number,
+  contentType: ContentType = "anime"
+): Promise<Anime[]> {
+  try {
+    const data = (await fetchWithRetry(
+      `${BASE_URL}/${contentType}/${id}/recommendations`
+    )) as { data: Array<{ entry: Anime }> };
+    return (data.data ?? []).slice(0, 12).map((r) => r.entry);
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchCharacters(
+  id: number,
+  contentType: ContentType = "anime"
+): Promise<Character[]> {
+  try {
+    const data = (await fetchWithRetry(
+      `${BASE_URL}/${contentType}/${id}/characters`
+    )) as { data: Character[] };
+    return (data.data ?? []).slice(0, 16);
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchAnimeById(id: number): Promise<Anime | null> {

@@ -94,3 +94,20 @@ Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHea
 ### `scripts` (`@workspace/scripts`)
 
 Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+
+### `artifacts/mobile` (`@workspace/mobile`)
+
+Expo React Native app — AniHour anime/manga discovery app.
+
+- **Colors**: `#1a1a2e` bg, `#ff6b9d` primary, `#4ecdc4` secondary, `#45b7d1` accent
+- **Data**: Jikan API v4 (`https://api.jikan.moe/v4`), no API key required
+- **Key files**:
+  - `lib/jikan.ts` — all API calls; `filterSFW()` strips Rx/Hentai content client-side
+  - `lib/content-settings.tsx` — global Anime/Manga + adult mode state
+  - `components/ContentToggleBar.tsx` — segmented pill + 18+ toggle shown in every screen header
+  - `app/(tabs)/index.tsx` — Home: hero slider (items 0–4) + grid (items 5+, no duplication)
+  - `app/(tabs)/top.tsx` — Top screen: manga-specific filter chips
+  - `app/(tabs)/upcoming.tsx`, `news.tsx`, `search.tsx` — other tabs
+  - `app/anime/[id].tsx` — Detail screen: Characters + Recommendations horizontal scrollers
+- **Dev**: `pnpm --filter @workspace/mobile run dev` (port from `$PORT`)
+- **Adult mode**: `genres=12&sfw=false` in all API calls; `filterSFW()` as client-side safety net for SFW mode

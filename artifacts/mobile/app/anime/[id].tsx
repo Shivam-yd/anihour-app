@@ -20,21 +20,43 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 
 import Colors from "@/constants/colors";
-import { fetchAnimeById, fetchMangaById } from "@/lib/jikan";
+import {
+  fetchAnimeById,
+  fetchMangaById,
+  fetchRecommendations,
+  fetchCharacters,
+  type Character,
+  type Anime,
+  type ContentType,
+} from "@/lib/jikan";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const HEADER_HEIGHT = SCREEN_HEIGHT * 0.42;
+const CHAR_CARD_W = 88;
 
 export default function AnimeDetailScreen() {
   const { id, contentType } = useLocalSearchParams<{ id: string; contentType?: string }>();
   const insets = useSafeAreaInsets();
   const [showFullSynopsis, setShowFullSynopsis] = useState(false);
   const isManga = contentType === "manga";
+  const ct: ContentType = isManga ? "manga" : "anime";
 
   const { data: anime, isLoading, isError } = useQuery({
     queryKey: ["detail", id, contentType],
     queryFn: () => isManga ? fetchMangaById(Number(id)) : fetchAnimeById(Number(id)),
     enabled: !!id,
+  });
+
+  const { data: characters = [] } = useQuery<Character[]>({
+    queryKey: ["characters", id, contentType],
+    queryFn: () => fetchCharacters(Number(id), ct),
+    enabled: !!id && !!anime,
+  });
+
+  const { data: recommendations = [] } = useQuery<Anime[]>({
+    queryKey: ["recommendations", id, contentType],
+    queryFn: () => fetchRecommendations(Number(id), ct),
+    enabled: !!id && !!anime,
   });
 
   const handleBack = useCallback(() => {
@@ -50,6 +72,11 @@ export default function AnimeDetailScreen() {
       });
     }
   }, [anime]);
+
+  const handleRecommendation = useCallback((rec: Anime) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({ pathname: "/anime/[id]", params: { id: rec.mal_id.toString(), contentType } });
+  }, [contentType]);
 
   const backBtn = (
     <Pressable
@@ -226,6 +253,33 @@ export default function AnimeDetailScreen() {
           </View>
         ) : null}
 
+        {/* Characters */}
+        {characters.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Characters</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.hScroll}
+            >
+              {characters.map((c) => (
+                <View key={c.character.mal_id} style={styles.charCard}>
+                  <Image
+                    source={{ uri: c.character.images?.jpg?.image_url }}
+                    style={styles.charImage}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                  <View style={styles.charRoleBadge}>
+                    <Text style={styles.charRoleText}>{c.role === "Main" ? "Main" : "Sub"}</Text>
+                  </View>
+                  <Text style={styles.charName} numberOfLines={2}>{c.character.name}</Text>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
         {/* Popularity & members */}
         {anime.popularity !== undefined && (
           <View style={styles.infoRow}>
@@ -249,6 +303,52 @@ export default function AnimeDetailScreen() {
             </Text>
             <Feather name="external-link" size={15} color="#fff" />
           </TouchableOpacity>
+        )}
+
+        {/* Recommendations */}
+        {recommendations.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.recHeader}>
+              <View style={styles.recAccent} />
+              <Text style={styles.recTitle}>You May Also Like</Text>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.hScroll}
+            >
+              {recommendations.map((rec) => {
+                const recImg = rec.images?.jpg?.large_image_url ?? rec.images?.jpg?.image_url;
+                const recTitle = rec.title_english ?? rec.title;
+                return (
+                  <TouchableOpacity
+                    key={rec.mal_id}
+                    style={styles.recCard}
+                    onPress={() => handleRecommendation(rec)}
+                    activeOpacity={0.85}
+                  >
+                    <Image
+                      source={{ uri: recImg }}
+                      style={styles.recImage}
+                      contentFit="cover"
+                      transition={200}
+                    />
+                    <LinearGradient
+                      colors={["transparent", "rgba(26,26,46,0.92)"]}
+                      style={styles.recGradient}
+                    />
+                    {rec.score !== undefined && rec.score > 0 && (
+                      <View style={styles.recScore}>
+                        <Ionicons name="star" size={9} color={Colors.dark.star} />
+                        <Text style={styles.recScoreText}>{rec.score.toFixed(1)}</Text>
+                      </View>
+                    )}
+                    <Text style={styles.recName} numberOfLines={2}>{recTitle}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
         )}
       </ScrollView>
 
@@ -332,10 +432,10 @@ const styles = StyleSheet.create({
   },
   statValue: { fontSize: 13, fontFamily: "Inter_700Bold" },
   statLabel: { color: Colors.dark.textTertiary, fontSize: 10, fontFamily: "Inter_400Regular" },
-  section: { paddingHorizontal: 16, paddingTop: 18 },
+  section: { paddingHorizontal: 16, paddingTop: 20 },
   sectionLabel: {
     color: Colors.dark.textSecondary, fontSize: 11, fontFamily: "Inter_600SemiBold",
-    letterSpacing: 1.5, marginBottom: 10, textTransform: "uppercase",
+    letterSpacing: 1.5, marginBottom: 12, textTransform: "uppercase",
   },
   tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
   genreTag: {
@@ -353,6 +453,20 @@ const styles = StyleSheet.create({
   synopsis: { color: Colors.dark.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 22 },
   readMore: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 8 },
   readMoreText: { color: Colors.dark.primary, fontSize: 13, fontFamily: "Inter_500Medium" },
+  hScroll: { paddingRight: 16 },
+  // Characters
+  charCard: { width: CHAR_CARD_W, marginRight: 10, alignItems: "center" },
+  charImage: { width: CHAR_CARD_W, height: CHAR_CARD_W * 1.3, borderRadius: 10, backgroundColor: Colors.dark.surface },
+  charRoleBadge: {
+    position: "absolute", top: 6, right: 4,
+    backgroundColor: "rgba(26,26,46,0.85)",
+    borderRadius: 4, paddingHorizontal: 4, paddingVertical: 2,
+  },
+  charRoleText: { color: Colors.dark.primary, fontSize: 8, fontFamily: "Inter_600SemiBold" },
+  charName: {
+    color: Colors.dark.textSecondary, fontSize: 10, fontFamily: "Inter_400Regular",
+    marginTop: 5, textAlign: "center", lineHeight: 14,
+  },
   infoRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingTop: 12 },
   infoText: { color: Colors.dark.textSecondary, fontSize: 13, fontFamily: "Inter_400Regular" },
   malButton: {
@@ -361,4 +475,21 @@ const styles = StyleSheet.create({
     borderRadius: 14, backgroundColor: Colors.dark.primary,
   },
   malButtonText: { color: "#fff", fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  // Recommendations
+  recHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
+  recAccent: { width: 3, height: 16, backgroundColor: Colors.dark.primary, borderRadius: 2 },
+  recTitle: { color: Colors.dark.text, fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  recCard: { width: 120, marginRight: 10, borderRadius: 10, overflow: "hidden", backgroundColor: Colors.dark.surface },
+  recImage: { width: 120, height: 170 },
+  recGradient: { position: "absolute", bottom: 0, left: 0, right: 0, height: 80 },
+  recScore: {
+    position: "absolute", top: 6, right: 6,
+    flexDirection: "row", alignItems: "center", gap: 2,
+    backgroundColor: "rgba(26,26,46,0.85)", borderRadius: 4, paddingHorizontal: 4, paddingVertical: 2,
+  },
+  recScoreText: { color: Colors.dark.star, fontSize: 9, fontFamily: "Inter_700Bold" },
+  recName: {
+    position: "absolute", bottom: 6, left: 6, right: 6,
+    color: Colors.dark.text, fontSize: 10, fontFamily: "Inter_500Medium", lineHeight: 14,
+  },
 });

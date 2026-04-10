@@ -163,6 +163,7 @@ export default function SeasonScreen() {
         <View style={styles.sectionAccent} />
         <Text style={styles.sectionTitle}>{sectionTitle}</Text>
       </View>
+      <View style={{ height: 4 }} />
 
       {isLoading && (
         <View style={styles.skeletonGrid}>
@@ -180,7 +181,9 @@ export default function SeasonScreen() {
     </View>
   );
 
-  const rows = anime ? chunkArray(anime, 2) : [];
+  // Exclude the first 5 items already shown in the hero slider
+  const gridAnime = anime ? anime.slice(5) : [];
+  const rows = chunkArray(gridAnime, 2);
 
   return (
     <View style={styles.container}>
@@ -191,7 +194,7 @@ export default function SeasonScreen() {
           ListHeaderComponent={renderHeader}
           renderItem={({ item: row }) => (
             <View style={styles.gridRow}>
-              {row.map((a) => <AnimeCard key={a.mal_id} anime={a} />)}
+              {row.map((a) => <AnimeCard key={`${a.mal_id}`} anime={a} />)}
             </View>
           )}
           contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? insets.bottom + 84 : insets.bottom + 90 }}
