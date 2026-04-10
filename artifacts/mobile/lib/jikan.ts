@@ -25,6 +25,11 @@ export interface AnimeStudio {
   name: string;
 }
 
+export interface StreamingService {
+  name: string;
+  url: string;
+}
+
 export interface Anime {
   mal_id: number;
   title: string;
@@ -40,7 +45,11 @@ export interface Anime {
   status?: string;
   synopsis?: string;
   genres?: AnimeGenre[];
+  themes?: AnimeGenre[];
+  demographics?: AnimeGenre[];
   studios?: AnimeStudio[];
+  producers?: AnimeStudio[];
+  licensors?: AnimeStudio[];
   authors?: { mal_id: number; name: string }[];
   year?: number;
   season?: string;
@@ -50,6 +59,8 @@ export interface Anime {
   source?: string;
   aired?: { from?: string; to?: string };
   published?: { from?: string; to?: string };
+  broadcast?: { day?: string; time?: string; timezone?: string; string?: string };
+  streaming?: StreamingService[];
   trailer?: {
     youtube_id?: string;
     url?: string;
@@ -85,6 +96,42 @@ function filterSFW(items: Anime[]): Anime[] {
   );
 }
 
+function deduplicateById(items: Anime[]): Anime[] {
+  const seen = new Set<number>();
+  return items.filter((a) => {
+    if (seen.has(a.mal_id)) return false;
+    seen.add(a.mal_id);
+    return true;
+  });
+}
+
+export const GENRE_MAP: Record<string, { id: number; label: string }> = {
+  action: { id: 1, label: "Action" },
+  adventure: { id: 2, label: "Adventure" },
+  comedy: { id: 4, label: "Comedy" },
+  drama: { id: 8, label: "Drama" },
+  fantasy: { id: 10, label: "Fantasy" },
+  horror: { id: 14, label: "Horror" },
+  mystery: { id: 7, label: "Mystery" },
+  psychological: { id: 40, label: "Psychological" },
+  romance: { id: 22, label: "Romance" },
+  "sci-fi": { id: 24, label: "Sci-Fi" },
+  school: { id: 26, label: "School" },
+  seinen: { id: 42, label: "Seinen" },
+  shoujo: { id: 25, label: "Shoujo" },
+  shounen: { id: 27, label: "Shounen" },
+  "slice-of-life": { id: 36, label: "Slice of Life" },
+  sports: { id: 30, label: "Sports" },
+  supernatural: { id: 37, label: "Supernatural" },
+  thriller: { id: 41, label: "Thriller" },
+  historical: { id: 13, label: "Historical" },
+  isekai: { id: 62, label: "Isekai" },
+  military: { id: 38, label: "Military" },
+  mecha: { id: 18, label: "Mecha" },
+  music: { id: 19, label: "Music" },
+  magic: { id: 16, label: "Magic" },
+};
+
 async function fetchWithRetry(url: string, retries = 2): Promise<unknown> {
   for (let i = 0; i <= retries; i++) {
     try {
@@ -117,7 +164,7 @@ export async function fetchSeasonNow(
     url = `${BASE_URL}/seasons/now?page=${page}&limit=25&sfw=true`;
   }
   const data = (await fetchWithRetry(url)) as { data: Anime[] };
-  const items = data.data ?? [];
+  const items = deduplicateById(data.data ?? []);
   return isAdult ? items : filterSFW(items);
 }
 
@@ -142,7 +189,7 @@ export async function fetchTopAnime(
     url = `${BASE_URL}/top/anime?page=${page}&limit=25${filterParam}${typeParam}&sfw=true`;
   }
   const data = (await fetchWithRetry(url)) as { data: Anime[] };
-  const items = data.data ?? [];
+  const items = deduplicateById(data.data ?? []);
   return isAdult ? items : filterSFW(items);
 }
 
@@ -160,8 +207,27 @@ export async function fetchUpcoming(
     url = `${BASE_URL}/seasons/upcoming?page=${page}&limit=25&sfw=true`;
   }
   const data = (await fetchWithRetry(url)) as { data: Anime[] };
-  const items = data.data ?? [];
+  const items = deduplicateById(data.data ?? []);
   return isAdult ? items : filterSFW(items);
+}
+
+export async function fetchAnimeByGenre(
+  genreId: number,
+  page = 1,
+  contentType: ContentType = "anime"
+): Promise<Anime[]> {
+  const url = `${BASE_URL}/${contentType}?genres=${genreId}&order_by=score&sort=desc&page=${page}&limit=25&sfw=true`;
+  const data = (await fetchWithRetry(url)) as { data: Anime[] };
+  return deduplicateById(filterSFW(data.data ?? []));
+}
+
+export async function fetchSeasonArchive(
+  year: number,
+  season: string
+): Promise<Anime[]> {
+  const url = `${BASE_URL}/seasons/${year}/${season}?limit=25&sfw=true`;
+  const data = (await fetchWithRetry(url)) as { data: Anime[] };
+  return deduplicateById(filterSFW(data.data ?? []));
 }
 
 export async function fetchAnimeNews(): Promise<NewsItem[]> {

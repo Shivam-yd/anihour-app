@@ -1,4 +1,6 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -18,7 +20,18 @@ import { AnimeCardWide } from "@/components/AnimeCard";
 import { ContentToggleBar } from "@/components/ContentToggleBar";
 import Colors from "@/constants/colors";
 import { useContentSettings } from "@/lib/content-settings";
-import { searchAnime, Anime } from "@/lib/jikan";
+import { searchAnime, Anime, GENRE_MAP } from "@/lib/jikan";
+
+const GENRE_COLORS = [
+  Colors.dark.primary, Colors.dark.secondary, Colors.dark.accent,
+  "#ffa726", "#66bb6a", "#ab47bc", "#ef5350", "#26c6da",
+  "#8d6e63", "#78909c", "#5c6bc0", "#42a5f5",
+];
+
+const GENRES = Object.entries(GENRE_MAP).map(([slug, { id, label }], i) => ({
+  id, slug, label,
+  color: GENRE_COLORS[i % GENRE_COLORS.length],
+}));
 
 const SUGGESTIONS = [
   "Naruto", "One Piece", "Attack on Titan", "Demon Slayer",
@@ -75,6 +88,11 @@ export default function SearchScreen() {
     handleSearch(s);
   }, [handleSearch]);
 
+  const handleGenre = useCallback((genreId: number, genreName: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({ pathname: "/genre/[id]", params: { id: genreId.toString(), name: genreName, contentType } });
+  }, [contentType]);
+
   const topPad = Platform.OS === "web" ? insets.top + 67 : insets.top + 12;
 
   return (
@@ -129,7 +147,7 @@ export default function SearchScreen() {
 
       {/* ── Content area ── */}
       {!hasSearched ? (
-        /* Suggestion chips when no search has been made */
+        /* Suggestion chips + genre discovery when no search has been made */
         <ScrollView
           style={styles.suggestionsScroll}
           contentContainerStyle={styles.suggestionsContent}
@@ -147,6 +165,25 @@ export default function SearchScreen() {
               >
                 <Feather name="trending-up" size={11} color={Colors.dark.primary} />
                 <Text style={styles.chipText}>{s}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Genre Discovery */}
+          <View style={styles.genreSectionHeader}>
+            <View style={styles.genreAccent} />
+            <Text style={styles.genreSectionTitle}>Browse by Genre</Text>
+          </View>
+          <View style={styles.genreGrid}>
+            {GENRES.map((g) => (
+              <TouchableOpacity
+                key={g.id}
+                style={[styles.genreChip, { borderColor: g.color }]}
+                onPress={() => handleGenre(g.id, g.label)}
+                activeOpacity={0.75}
+              >
+                <View style={[styles.genreChipDot, { backgroundColor: g.color }]} />
+                <Text style={[styles.genreChipText, { color: g.color }]}>{g.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -335,4 +372,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: "Inter_400Regular",
   },
+
+  genreSectionHeader: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    marginTop: 24, marginBottom: 12,
+  },
+  genreAccent: { width: 3, height: 16, backgroundColor: Colors.dark.primary, borderRadius: 2 },
+  genreSectionTitle: { color: Colors.dark.text, fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  genreGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  genreChip: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingHorizontal: 12, paddingVertical: 8,
+    backgroundColor: Colors.dark.surface, borderRadius: 20, borderWidth: 1.5,
+  },
+  genreChipDot: { width: 7, height: 7, borderRadius: 4 },
+  genreChipText: { fontSize: 13, fontFamily: "Inter_500Medium" },
 });

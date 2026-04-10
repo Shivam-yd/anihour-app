@@ -8,6 +8,7 @@ import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -29,6 +30,18 @@ import {
   type Anime,
   type ContentType,
 } from "@/lib/jikan";
+
+const STREAMING_COLORS: Record<string, { bg: string; text: string }> = {
+  crunchyroll: { bg: "#f47521", text: "#fff" },
+  funimation: { bg: "#410099", text: "#fff" },
+  netflix: { bg: "#e50914", text: "#fff" },
+  hidive: { bg: "#00adef", text: "#fff" },
+  "amazon prime video": { bg: "#00a8e0", text: "#fff" },
+  "disney+": { bg: "#113ccf", text: "#fff" },
+  hulu: { bg: "#1ce783", text: "#000" },
+  "anime digital network": { bg: "#1a96f0", text: "#fff" },
+  default: { bg: Colors.dark.surface, text: Colors.dark.textSecondary },
+};
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const HEADER_HEIGHT = SCREEN_HEIGHT * 0.42;
@@ -76,6 +89,11 @@ export default function AnimeDetailScreen() {
   const handleRecommendation = useCallback((rec: Anime) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({ pathname: "/anime/[id]", params: { id: rec.mal_id.toString(), contentType } });
+  }, [contentType]);
+
+  const handleGenreTap = useCallback((genreId: number, genreName: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({ pathname: "/genre/[id]", params: { id: genreId.toString(), name: genreName, contentType } });
   }, [contentType]);
 
   const backBtn = (
@@ -184,15 +202,20 @@ export default function AnimeDetailScreen() {
           )}
         </View>
 
-        {/* Genres */}
+        {/* Genres — tappable to browse by genre */}
         {anime.genres && anime.genres.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Genres</Text>
             <View style={styles.tagRow}>
               {anime.genres.map((g) => (
-                <View key={g.mal_id} style={styles.genreTag}>
+                <TouchableOpacity
+                  key={g.mal_id}
+                  style={styles.genreTag}
+                  onPress={() => handleGenreTap(g.mal_id, g.name)}
+                  activeOpacity={0.7}
+                >
                   <Text style={styles.genreTagText}>{g.name}</Text>
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
           </View>
@@ -277,6 +300,41 @@ export default function AnimeDetailScreen() {
                 </View>
               ))}
             </ScrollView>
+          </View>
+        )}
+
+        {/* Broadcast schedule (anime only) */}
+        {!isManga && anime.broadcast?.string && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Broadcast</Text>
+            <View style={styles.broadcastRow}>
+              <Ionicons name="time-outline" size={15} color={Colors.dark.accent} />
+              <Text style={styles.broadcastText}>{anime.broadcast.string}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Streaming platforms */}
+        {!isManga && anime.streaming && anime.streaming.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Available On</Text>
+            <View style={styles.streamingRow}>
+              {anime.streaming.map((s) => {
+                const key = s.name.toLowerCase();
+                const colors = STREAMING_COLORS[key] ?? STREAMING_COLORS.default;
+                return (
+                  <TouchableOpacity
+                    key={s.name}
+                    style={[styles.streamBadge, { backgroundColor: colors.bg }]}
+                    onPress={() => Linking.openURL(s.url)}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="play-circle" size={12} color={colors.text} />
+                    <Text style={[styles.streamBadgeText, { color: colors.text }]}>{s.name}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
         )}
 
@@ -469,6 +527,14 @@ const styles = StyleSheet.create({
   },
   infoRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingTop: 12 },
   infoText: { color: Colors.dark.textSecondary, fontSize: 13, fontFamily: "Inter_400Regular" },
+  broadcastRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  broadcastText: { color: Colors.dark.textSecondary, fontSize: 13, fontFamily: "Inter_400Regular" },
+  streamingRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  streamBadge: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
+  },
+  streamBadgeText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
   malButton: {
     flexDirection: "row", alignItems: "center", justifyContent: "center",
     gap: 8, marginHorizontal: 16, marginTop: 24, paddingVertical: 14,

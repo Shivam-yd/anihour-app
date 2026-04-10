@@ -108,6 +108,9 @@ Expo React Native app — AniHour anime/manga discovery app.
   - `app/(tabs)/index.tsx` — Home: hero slider (items 0–4) + grid (items 5+, no duplication)
   - `app/(tabs)/top.tsx` — Top screen: manga-specific filter chips
   - `app/(tabs)/upcoming.tsx`, `news.tsx`, `search.tsx` — other tabs
-  - `app/anime/[id].tsx` — Detail screen: Characters + Recommendations horizontal scrollers
+  - `app/anime/[id].tsx` — Detail screen: streaming platforms (color-coded badges), broadcast schedule, Characters + Recommendations horizontal scrollers; genres are tappable → genre screen
+  - `app/genre/[id].tsx` — Genre browse screen (grid/list); reached from tapping genre tags on detail page
 - **Dev**: `pnpm --filter @workspace/mobile run dev` (port from `$PORT`)
-- **Adult mode**: `genres=12&sfw=false` in all API calls; `filterSFW()` as client-side safety net for SFW mode
+- **Adult mode**: `genres=12&sfw=false` in all API calls; `filterSFW()` + `deduplicateById()` as client-side safety nets
+- **Genre map**: `GENRE_MAP` exported from `lib/jikan.ts` (24 genres with IDs); used in genre browser and search screen
+- **Search screen**: Shows popular searches + Browse by Genre section (24 color-coded genre chips); tapping navigates to genre screen
