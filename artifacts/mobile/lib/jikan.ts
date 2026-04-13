@@ -335,6 +335,34 @@ export async function fetchCharacters(
   }
 }
 
+export async function fetchStudioAnime(studioId: number, page = 1): Promise<Anime[]> {
+  const url = `${BASE_URL}/anime?producers=${studioId}&order_by=score&sort=desc&page=${page}&limit=24&sfw=true`;
+  const data = (await fetchWithRetry(url)) as { data: Anime[]; pagination?: { has_next_page: boolean } };
+  return deduplicateById(filterSFW(data.data ?? []));
+}
+
+export async function fetchStudioAnimeHasNext(studioId: number, page = 1): Promise<{ items: Anime[]; hasNext: boolean }> {
+  const url = `${BASE_URL}/anime?producers=${studioId}&order_by=score&sort=desc&page=${page}&limit=24&sfw=true`;
+  const data = (await fetchWithRetry(url)) as { data: Anime[]; pagination?: { has_next_page: boolean } };
+  return {
+    items: deduplicateById(filterSFW(data.data ?? [])),
+    hasNext: data.pagination?.has_next_page ?? false,
+  };
+}
+
+export async function fetchSeasonArchiveHasNext(
+  year: number,
+  season: string,
+  page = 1
+): Promise<{ items: Anime[]; hasNext: boolean }> {
+  const url = `${BASE_URL}/seasons/${year}/${season}?limit=24&sfw=true&page=${page}`;
+  const data = (await fetchWithRetry(url)) as { data: Anime[]; pagination?: { has_next_page: boolean } };
+  return {
+    items: deduplicateById(filterSFW(data.data ?? [])),
+    hasNext: data.pagination?.has_next_page ?? false,
+  };
+}
+
 export async function fetchAnimeById(id: number): Promise<Anime | null> {
   const data = (await fetchWithRetry(`${BASE_URL}/anime/${id}/full`)) as { data: Anime };
   return data.data ?? null;

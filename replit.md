@@ -102,15 +102,19 @@ Expo React Native app — AniHour anime/manga discovery app.
 - **Colors**: `#1a1a2e` bg, `#ff6b9d` primary, `#4ecdc4` secondary, `#45b7d1` accent
 - **Data**: Jikan API v4 (`https://api.jikan.moe/v4`), no API key required
 - **Key files**:
-  - `lib/jikan.ts` — all API calls; `filterSFW()` strips Rx/Hentai content client-side
+  - `lib/jikan.ts` — all API calls; `filterSFW()` strips Rx/Hentai content client-side; `fetchStudioAnimeHasNext()`, `fetchSeasonArchiveHasNext()` added
   - `lib/content-settings.tsx` — global Anime/Manga + adult mode state
   - `components/ContentToggleBar.tsx` — segmented pill + 18+ toggle shown in every screen header
   - `app/(tabs)/index.tsx` — Home: hero slider (items 0–4) + grid (items 5+, no duplication)
-  - `app/(tabs)/top.tsx` — Top screen: manga-specific filter chips
+  - `app/(tabs)/top.tsx` — Top anime/manga with sort + type filters (TV/Movie/OVA/ONA/Special for anime; Manga/Manhwa/Manhua/Novel/One-Shot for manga)
   - `app/(tabs)/upcoming.tsx`, `news.tsx`, `search.tsx` — other tabs
-  - `app/anime/[id].tsx` — Detail screen: streaming platforms (color-coded badges), broadcast schedule, Characters + Recommendations horizontal scrollers; genres are tappable → genre screen
-  - `app/genre/[id].tsx` — Genre browse screen (grid/list); reached from tapping genre tags on detail page
+  - `app/anime/[id].tsx` — Detail: streaming color-coded badges, broadcast, Characters, Recommendations, tappable genres → genre screen, tappable studios → studio screen
+  - `app/genre/[id].tsx` — Genre browse screen (grid/list)
+  - `app/studio/[id].tsx` — Studio page: shows studio icon, title count, avg score + paginated 3-col anime grid
+  - `app/seasons/index.tsx` — Season Archive: year grid (2000–now) with Winter/Spring/Summer/Fall cards
+  - `app/seasons/[year]/[season].tsx` — Season detail: paginated grid of anime for that specific season
 - **Dev**: `pnpm --filter @workspace/mobile run dev` (port from `$PORT`)
+- **Tab icons**: Uses cross-platform `@expo/vector-icons` (Ionicons + Feather); no iOS-specific SF Symbols or expo-glass-effect
 - **Adult mode**: `genres=12&sfw=false` in all API calls; `filterSFW()` + `deduplicateById()` as client-side safety nets
 - **Genre map**: `GENRE_MAP` exported from `lib/jikan.ts` (24 genres with IDs); used in genre browser and search screen
-- **Search screen**: Shows popular searches + Browse by Genre section (24 color-coded genre chips); tapping navigates to genre screen
+- **Search screen**: Popular searches + Season Archive card + Browse by Genre (24 color-coded chips)

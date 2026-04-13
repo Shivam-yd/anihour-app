@@ -169,8 +169,33 @@ export default function SearchScreen() {
             ))}
           </View>
 
-          {/* Genre Discovery */}
+          {/* Season Archive */}
           <View style={styles.genreSectionHeader}>
+            <View style={[styles.genreAccent, { backgroundColor: "#f7971e" }]} />
+            <Text style={styles.genreSectionTitle}>Browse by Season</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.archiveCard}
+            onPress={() => router.push("/seasons")}
+            activeOpacity={0.85}
+          >
+            <View style={styles.archiveCardInner}>
+              <View style={styles.archiveIconRow}>
+                <View style={[styles.archiveSeasonDot, { backgroundColor: "#4ecdc4" }]} />
+                <View style={[styles.archiveSeasonDot, { backgroundColor: "#a8e063" }]} />
+                <View style={[styles.archiveSeasonDot, { backgroundColor: "#f7971e" }]} />
+                <View style={[styles.archiveSeasonDot, { backgroundColor: "#e05c00" }]} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.archiveCardTitle}>Season Archive</Text>
+                <Text style={styles.archiveCardSub}>Browse anime by season from 2000 to now</Text>
+              </View>
+              <Feather name="chevron-right" size={20} color={Colors.dark.textTertiary} />
+            </View>
+          </TouchableOpacity>
+
+          {/* Genre Discovery */}
+          <View style={[styles.genreSectionHeader, { marginTop: 4 }]}>
             <View style={styles.genreAccent} />
             <Text style={styles.genreSectionTitle}>Browse by Genre</Text>
           </View>
@@ -387,4 +412,18 @@ const styles = StyleSheet.create({
   },
   genreChipDot: { width: 7, height: 7, borderRadius: 4 },
   genreChipText: { fontSize: 13, fontFamily: "Inter_500Medium" },
+
+  archiveCard: {
+    backgroundColor: Colors.dark.surface, borderRadius: 14,
+    borderWidth: 1, borderColor: Colors.dark.border,
+    overflow: "hidden",
+  },
+  archiveCardInner: {
+    flexDirection: "row", alignItems: "center",
+    padding: 14, gap: 12,
+  },
+  archiveIconRow: { flexDirection: "row", gap: 5, alignItems: "center" },
+  archiveSeasonDot: { width: 12, height: 12, borderRadius: 6 },
+  archiveCardTitle: { color: Colors.dark.text, fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  archiveCardSub: { color: Colors.dark.textSecondary, fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
 });

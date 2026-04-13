@@ -1,0 +1,206 @@
+import { Feather, Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { AnimeCard } from "@/components/AnimeCard";
+import Colors from "@/constants/colors";
+import { fetchSeasonArchiveHasNext, Anime } from "@/lib/jikan";
+
+const SEASON_META: Record<string, { color: string; icon: string }> = {
+  winter: { color: "#4ecdc4", icon: "snow" },
+  spring: { color: "#a8e063", icon: "leaf" },
+  summer: { color: "#f7971e", icon: "sunny" },
+  fall: { color: "#e05c00", icon: "leaf" },
+};
+
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const result: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size));
+  return result;
+}
+
+export default function SeasonDetailScreen() {
+  const { year, season } = useLocalSearchParams<{ year: string; season: string }>();
+  const insets = useSafeAreaInsets();
+
+  const [page, setPage] = useState(1);
+  const [allAnime, setAllAnime] = useState<Anime[]>([]);
+  const [hasNext, setHasNext] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState(false);
+
+  const load = useCallback(
+    async (p: number) => {
+      if (p === 1) { setLoading(true); setError(false); }
+      else setLoadingMore(true);
+      try {
+        const result = await fetchSeasonArchiveHasNext(Number(year), season ?? "winter", p);
+        setAllAnime((prev) => (p === 1 ? result.items : [...prev, ...result.items]));
+        setHasNext(result.hasNext);
+      } catch {
+        setError(true);
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [year, season]
+  );
+
+  useEffect(() => { load(1); }, [load]);
+
+  const meta = SEASON_META[season ?? "winter"] ?? { color: Colors.dark.primary, icon: "calendar" };
+  const seasonLabel = season ? season.charAt(0).toUpperCase() + season.slice(1) : "Season";
+  const rows = chunkArray(allAnime, 2);
+
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={rows}
+        keyExtractor={(_, i) => `row-${i}`}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+        ListHeaderComponent={() => (
+          <View>
+            <LinearGradient
+              colors={[`${meta.color}28`, "transparent"]}
+              style={[styles.header, { paddingTop: Platform.OS === "web" ? insets.top + 72 : insets.top + 16 }]}
+            >
+              <View style={styles.breadcrumb}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.8}>
+                  <Feather name="chevron-left" size={22} color={Colors.dark.text} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => router.push("/seasons")} activeOpacity={0.8}>
+                  <Text style={styles.breadcrumbLink}>Season Archive</Text>
+                </TouchableOpacity>
+                <Feather name="chevron-right" size={14} color={Colors.dark.textTertiary} />
+                <Text style={styles.breadcrumbText}>{year}</Text>
+              </View>
+
+              <View style={styles.titleRow}>
+                <Ionicons name={meta.icon as any} size={32} color={meta.color} style={{ marginRight: 12 }} />
+                <View>
+                  <Text style={[styles.pageTitle, { color: meta.color }]}>{seasonLabel}</Text>
+                  <Text style={styles.pageSubtitle}>{year} • {allAnime.length}{hasNext ? "+" : ""} anime</Text>
+                </View>
+              </View>
+            </LinearGradient>
+
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionAccent, { backgroundColor: meta.color }]} />
+              <Text style={styles.sectionTitle}>{seasonLabel} {year} Anime</Text>
+            </View>
+
+            {loading && (
+              <View style={styles.centered}>
+                <ActivityIndicator size="large" color={meta.color} />
+                <Text style={styles.loadingText}>Loading...</Text>
+              </View>
+            )}
+
+            {error && (
+              <View style={styles.centered}>
+                <Ionicons name="cloud-offline-outline" size={48} color={Colors.dark.textTertiary} />
+                <Text style={styles.errorText}>Failed to load this season</Text>
+                <TouchableOpacity
+                  style={[styles.retryBtn, { borderColor: meta.color }]}
+                  onPress={() => { setPage(1); load(1); }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.retryText, { color: meta.color }]}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
+        renderItem={({ item: row }) => (
+          <View style={styles.gridRow}>
+            {row.map((a) => <AnimeCard key={`${a.mal_id}`} anime={a} />)}
+            {row.length < 2 && <View style={styles.cardPlaceholder} />}
+          </View>
+        )}
+        ListFooterComponent={() =>
+          hasNext && !loading && !error ? (
+            <TouchableOpacity
+              style={[styles.loadMoreBtn, { borderColor: meta.color }]}
+              activeOpacity={0.8}
+              onPress={() => {
+                const next = page + 1;
+                setPage(next);
+                load(next);
+              }}
+              disabled={loadingMore}
+            >
+              {loadingMore ? (
+                <ActivityIndicator size="small" color={meta.color} />
+              ) : (
+                <Text style={[styles.loadMoreText, { color: meta.color }]}>Load More</Text>
+              )}
+            </TouchableOpacity>
+          ) : null
+        }
+        ListEmptyComponent={
+          !loading && !error ? (
+            <View style={styles.centered}>
+              <Text style={styles.errorText}>No anime found for this season</Text>
+            </View>
+          ) : null
+        }
+      />
+    </View>
+  );
+}
+
+const CARD_PLACEHOLDER_W =
+  (require("react-native").Dimensions.get("window").width - 48) / 2;
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.dark.background },
+  header: { paddingHorizontal: 16, paddingBottom: 20 },
+  breadcrumb: { flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 20 },
+  backBtn: {
+    width: 38, height: 38, borderRadius: 10,
+    backgroundColor: Colors.dark.surface, borderWidth: 1, borderColor: Colors.dark.border,
+    alignItems: "center", justifyContent: "center",
+  },
+  breadcrumbLink: { color: Colors.dark.primary, fontSize: 13, fontFamily: "Inter_500Medium" },
+  breadcrumbText: { color: Colors.dark.textSecondary, fontSize: 13, fontFamily: "Inter_400Regular" },
+  titleRow: { flexDirection: "row", alignItems: "center" },
+  pageTitle: { fontSize: 28, fontFamily: "Inter_700Bold" },
+  pageSubtitle: { color: Colors.dark.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular", marginTop: 2 },
+  sectionHeader: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    paddingHorizontal: 16, paddingVertical: 12,
+  },
+  sectionAccent: { width: 4, height: 20, borderRadius: 2 },
+  sectionTitle: { color: Colors.dark.text, fontSize: 17, fontFamily: "Inter_700Bold" },
+  gridRow: { flexDirection: "row", gap: 12, paddingHorizontal: 16, marginBottom: 12 },
+  cardPlaceholder: { width: CARD_PLACEHOLDER_W },
+  centered: { alignItems: "center", justifyContent: "center", paddingVertical: 60, gap: 12 },
+  loadingText: { color: Colors.dark.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular" },
+  errorText: { color: Colors.dark.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center" },
+  retryBtn: {
+    paddingHorizontal: 20, paddingVertical: 10,
+    backgroundColor: Colors.dark.surface, borderRadius: 10, borderWidth: 1,
+  },
+  retryText: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  loadMoreBtn: {
+    marginHorizontal: 16, marginVertical: 16, paddingVertical: 14,
+    backgroundColor: Colors.dark.surface, borderRadius: 12, borderWidth: 1,
+    alignItems: "center", justifyContent: "center",
+  },
+  loadMoreText: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+});

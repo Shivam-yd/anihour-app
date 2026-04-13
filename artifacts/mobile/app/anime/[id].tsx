@@ -96,6 +96,11 @@ export default function AnimeDetailScreen() {
     router.push({ pathname: "/genre/[id]", params: { id: genreId.toString(), name: genreName, contentType } });
   }, [contentType]);
 
+  const handleStudioTap = useCallback((studioId: number, studioName: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({ pathname: "/studio/[id]", params: { id: studioId.toString(), name: studioName } });
+  }, []);
+
   const backBtn = (
     <Pressable
       style={[styles.backBtn, { top: Platform.OS === "web" ? insets.top + 67 : insets.top + 12 }]}
@@ -241,9 +246,15 @@ export default function AnimeDetailScreen() {
               <Text style={styles.sectionLabel}>Studios</Text>
               <View style={styles.tagRow}>
                 {anime.studios.map((s) => (
-                  <View key={s.mal_id} style={styles.studioTag}>
-                    <Text style={styles.studioTagText}>{s.name}</Text>
-                  </View>
+                  <TouchableOpacity
+                    key={s.mal_id}
+                    style={[styles.studioTag, styles.studioTagTappable]}
+                    onPress={() => handleStudioTap(s.mal_id, s.name)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="film-outline" size={11} color={Colors.dark.secondary} style={{ marginRight: 4 }} />
+                    <Text style={[styles.studioTagText, { color: Colors.dark.secondary }]}>{s.name}</Text>
+                  </TouchableOpacity>
                 ))}
               </View>
             </View>
@@ -506,7 +517,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 6,
     backgroundColor: Colors.dark.secondaryLight, borderRadius: 20,
     borderWidth: 1, borderColor: Colors.dark.secondary,
+    flexDirection: "row", alignItems: "center",
   },
+  studioTagTappable: { borderStyle: "solid" },
   studioTagText: { color: Colors.dark.secondary, fontSize: 12, fontFamily: "Inter_500Medium" },
   synopsis: { color: Colors.dark.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 22 },
   readMore: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 8 },
