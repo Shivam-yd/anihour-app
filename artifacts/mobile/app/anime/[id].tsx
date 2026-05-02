@@ -12,6 +12,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -101,12 +102,37 @@ export default function AnimeDetailScreen() {
     router.push({ pathname: "/studio/[id]", params: { id: studioId.toString(), name: studioName } });
   }, []);
 
+  const handleShare = useCallback(async () => {
+    if (!anime) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const shareTitle = anime.title_english ?? anime.title;
+    const url = anime.url ?? `https://myanimelist.net/${isManga ? "manga" : "anime"}/${id}`;
+    try {
+      await Share.share({
+        title: shareTitle,
+        message: `Check out "${shareTitle}" on MyAnimeList: ${url}`,
+        url,
+      });
+    } catch (_) {}
+  }, [anime, id, isManga]);
+
+  const topOffset = Platform.OS === "web" ? insets.top + 67 : insets.top + 12;
+
   const backBtn = (
     <Pressable
-      style={[styles.backBtn, { top: Platform.OS === "web" ? insets.top + 67 : insets.top + 12 }]}
+      style={[styles.backBtn, { top: topOffset }]}
       onPress={handleBack}
     >
       <Feather name="chevron-left" size={22} color={Colors.dark.text} />
+    </Pressable>
+  );
+
+  const shareBtn = (
+    <Pressable
+      style={[styles.shareBtn, { top: topOffset }]}
+      onPress={handleShare}
+    >
+      <Feather name="share-2" size={18} color={Colors.dark.text} />
     </Pressable>
   );
 
@@ -487,6 +513,7 @@ export default function AnimeDetailScreen() {
       </ScrollView>
 
       {backBtn}
+      {shareBtn}
     </View>
   );
 }
@@ -530,6 +557,11 @@ const styles = StyleSheet.create({
   errorTitle: { color: Colors.dark.text, fontSize: 18, fontFamily: "Inter_600SemiBold" },
   backBtn: {
     position: "absolute", left: 16, width: 40, height: 40, borderRadius: 20,
+    backgroundColor: "rgba(26,26,46,0.85)", alignItems: "center", justifyContent: "center",
+    borderWidth: 1, borderColor: Colors.dark.border,
+  },
+  shareBtn: {
+    position: "absolute", right: 16, width: 40, height: 40, borderRadius: 20,
     backgroundColor: "rgba(26,26,46,0.85)", alignItems: "center", justifyContent: "center",
     borderWidth: 1, borderColor: Colors.dark.border,
   },
