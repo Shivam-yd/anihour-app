@@ -7,6 +7,7 @@ import {
   Platform,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -159,28 +160,25 @@ export default function TopScreen() {
             ))}
           </View>
 
-          <View style={styles.typesRow}>
-            {isManga
-              ? MANGA_TYPES.map((item) => (
-                  <Pressable
-                    key={item.key}
-                    style={[styles.typeChip, mangaType === item.key && styles.typeChipActive]}
-                    onPress={() => setMangaType(item.key)}
-                  >
-                    <Text style={[styles.typeChipText, mangaType === item.key && styles.typeChipTextActive]}>{item.label}</Text>
-                  </Pressable>
-                ))
-              : ANIME_TYPES.map((item) => (
-                  <Pressable
-                    key={item.key}
-                    style={[styles.typeChip, animeType === item.key && styles.typeChipActive]}
-                    onPress={() => setAnimeType(item.key)}
-                  >
-                    <Text style={[styles.typeChipText, animeType === item.key && styles.typeChipTextActive]}>{item.label}</Text>
-                  </Pressable>
-                ))
-            }
-          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.typesRow}
+            contentContainerStyle={styles.typesRowContent}
+          >
+            {(isManga ? MANGA_TYPES : ANIME_TYPES).map((item) => {
+              const active = isManga ? mangaType === item.key : animeType === item.key;
+              return (
+                <Pressable
+                  key={item.key}
+                  style={[styles.typeChip, active && styles.typeChipActive]}
+                  onPress={() => isManga ? setMangaType(item.key as MangaType) : setAnimeType(item.key as AnimeType)}
+                >
+                  <Text style={[styles.typeChipText, active && styles.typeChipTextActive]}>{item.label}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
         </>
       )}
 
@@ -257,7 +255,8 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: Colors.dark.secondary,
   },
   filtersRow: { flexDirection: "row", paddingHorizontal: 16, paddingBottom: 10, gap: 8 },
-  typesRow: { flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 16, paddingBottom: 12, gap: 7 },
+  typesRow: { paddingBottom: 12 },
+  typesRowContent: { paddingHorizontal: 16, gap: 7, flexDirection: "row" },
   chip: {
     flex: 1, paddingVertical: 8, borderRadius: 20,
     backgroundColor: Colors.dark.surface, borderWidth: 1, borderColor: Colors.dark.border, alignItems: "center",
