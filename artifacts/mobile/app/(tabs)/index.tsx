@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Dimensions,
   FlatList,
@@ -132,7 +132,7 @@ export default function SeasonScreen() {
     ? isAdultMode ? "Adult Manga" : "Manga"
     : isAdultMode ? "Adult Anime" : `${season} ${year}`;
 
-  const renderHeader = () => (
+  const renderHeader = useCallback(() => (
     <View>
       <LinearGradient
         colors={["rgba(255,107,157,0.18)", "rgba(26,26,46,0)"]}
@@ -179,11 +179,11 @@ export default function SeasonScreen() {
         </View>
       )}
     </View>
-  );
+  ), [insets.top, viewMode, headerTitle, sectionTitle, isLoading, isError, anime]);
 
   // Exclude the first 5 items already shown in the hero slider
-  const gridAnime = anime ? anime.slice(5) : [];
-  const rows = chunkArray(gridAnime, 2);
+  const gridAnime = useMemo(() => (anime ? anime.slice(5) : []), [anime]);
+  const rows = useMemo(() => chunkArray(gridAnime, 2), [gridAnime]);
 
   return (
     <View style={styles.container}>
@@ -199,6 +199,10 @@ export default function SeasonScreen() {
           )}
           contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? insets.bottom + 84 : insets.bottom + 90 }}
           showsVerticalScrollIndicator={false}
+          windowSize={5}
+          maxToRenderPerBatch={6}
+          initialNumToRender={8}
+          removeClippedSubviews={Platform.OS !== "web"}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.dark.primary} />}
         />
       ) : (
@@ -209,6 +213,10 @@ export default function SeasonScreen() {
           renderItem={({ item, index }) => <AnimeCardWide anime={item} index={index} />}
           contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? insets.bottom + 84 : insets.bottom + 90 }}
           showsVerticalScrollIndicator={false}
+          windowSize={5}
+          maxToRenderPerBatch={6}
+          initialNumToRender={8}
+          removeClippedSubviews={Platform.OS !== "web"}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.dark.primary} />}
           ListEmptyComponent={isLoading ? null : (
             <View style={styles.errorContainer}>

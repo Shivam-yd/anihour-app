@@ -35,7 +35,7 @@ function getYears(): number[] {
   return years;
 }
 
-function YearRow({ year }: { year: number }) {
+const YearRow = React.memo(function YearRow({ year }: { year: number }) {
   return (
     <View style={styles.yearBlock}>
       <Text style={styles.yearLabel}>{year}</Text>
@@ -58,7 +58,7 @@ function YearRow({ year }: { year: number }) {
       </View>
     </View>
   );
-}
+});
 
 export default function SeasonsIndexScreen() {
   const insets = useSafeAreaInsets();
@@ -71,6 +71,10 @@ export default function SeasonsIndexScreen() {
         keyExtractor={(y) => y.toString()}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+        windowSize={5}
+        maxToRenderPerBatch={8}
+        initialNumToRender={10}
+        removeClippedSubviews={Platform.OS !== "web"}
         ListHeaderComponent={() => (
           <View style={[styles.header, { paddingTop: Platform.OS === "web" ? insets.top + 72 : insets.top + 16 }]}>
             <View style={styles.breadcrumb}>

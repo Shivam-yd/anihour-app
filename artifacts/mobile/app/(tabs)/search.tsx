@@ -1,7 +1,7 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -56,6 +56,13 @@ export default function SearchScreen() {
   const { contentType, isAdultMode } = useContentSettings();
   const isManga = contentType === "manga";
   const suggestions = isManga ? MANGA_SUGGESTIONS : SUGGESTIONS;
+
+  useEffect(() => {
+    setResults([]);
+    setHasSearched(false);
+    setError(false);
+    setQuery("");
+  }, [contentType, isAdultMode]);
 
   const handleSearch = useCallback(async (q: string) => {
     const trimmed = q.trim();
@@ -246,6 +253,10 @@ export default function SearchScreen() {
             contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? insets.bottom + 84 : insets.bottom + 90 }}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            windowSize={5}
+            maxToRenderPerBatch={6}
+            initialNumToRender={8}
+            removeClippedSubviews={Platform.OS !== "web"}
           />
         </>
       )}

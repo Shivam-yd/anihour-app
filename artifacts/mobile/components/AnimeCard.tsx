@@ -20,7 +20,7 @@ import { useContentSettings } from "@/lib/content-settings";
 import { Anime } from "@/lib/jikan";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const CARD_WIDTH = (SCREEN_WIDTH - 48) / 2;
+const CARD_WIDTH = (SCREEN_WIDTH - 44) / 2;
 const CARD_HEIGHT = CARD_WIDTH * 1.5;
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -30,7 +30,7 @@ interface Props {
   rank?: number;
 }
 
-export function AnimeCard({ anime, rank }: Props) {
+export const AnimeCard = React.memo(function AnimeCard({ anime, rank }: Props) {
   const scale = useSharedValue(1);
   const { contentType } = useContentSettings();
 
@@ -58,7 +58,8 @@ export function AnimeCard({ anime, rank }: Props) {
         source={{ uri: imageUrl }}
         style={styles.image}
         contentFit="cover"
-        transition={300}
+        transition={200}
+        recyclingKey={`card-${anime.mal_id}`}
       />
       <View style={styles.gradient} />
 
@@ -90,14 +91,14 @@ export function AnimeCard({ anime, rank }: Props) {
       </View>
     </AnimatedPressable>
   );
-}
+});
 
 interface WideProps {
   anime: Anime;
   index: number;
 }
 
-export function AnimeCardWide({ anime, index }: WideProps) {
+export const AnimeCardWide = React.memo(function AnimeCardWide({ anime, index }: WideProps) {
   const scale = useSharedValue(1);
   const { contentType } = useContentSettings();
 
@@ -124,7 +125,8 @@ export function AnimeCardWide({ anime, index }: WideProps) {
         source={{ uri: imageUrl }}
         style={styles.wideImage}
         contentFit="cover"
-        transition={300}
+        transition={200}
+        recyclingKey={`wide-${anime.mal_id}`}
       />
 
       <View style={styles.wideInfo}>
@@ -175,7 +177,7 @@ export function AnimeCardWide({ anime, index }: WideProps) {
       </View>
     </AnimatedPressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

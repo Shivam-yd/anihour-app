@@ -20,7 +20,7 @@ import { fetchStudioAnimeHasNext, Anime } from "@/lib/jikan";
 
 const CARD_COLS = 3;
 
-function StudioAnimeCard({ anime }: { anime: Anime }) {
+const StudioAnimeCard = React.memo(function StudioAnimeCard({ anime }: { anime: Anime }) {
   const imageUrl = anime.images?.jpg?.large_image_url ?? anime.images?.jpg?.image_url;
   const title = anime.title_english ?? anime.title;
   return (
@@ -44,7 +44,7 @@ function StudioAnimeCard({ anime }: { anime: Anime }) {
       <Text style={styles.cardTitle} numberOfLines={2}>{title}</Text>
     </Pressable>
   );
-}
+});
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
   const result: T[][] = [];
@@ -96,6 +96,10 @@ export default function StudioScreen() {
         keyExtractor={(_, i) => `row-${i}`}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+        windowSize={5}
+        maxToRenderPerBatch={6}
+        initialNumToRender={9}
+        removeClippedSubviews={Platform.OS !== "web"}
         ListHeaderComponent={() => (
           <View>
             <LinearGradient

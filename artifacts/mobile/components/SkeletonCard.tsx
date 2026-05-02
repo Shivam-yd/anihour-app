@@ -10,7 +10,7 @@ import Animated, {
 import Colors from "@/constants/colors";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const CARD_WIDTH = (SCREEN_WIDTH - 48) / 2;
+const CARD_WIDTH = (SCREEN_WIDTH - 44) / 2;
 const CARD_HEIGHT = CARD_WIDTH * 1.5;
 
 function ShimmerBox({
@@ -43,15 +43,15 @@ function ShimmerBox({
   );
 }
 
-export function SkeletonCard() {
+export const SkeletonCard = React.memo(function SkeletonCard() {
   return (
     <View style={{ width: CARD_WIDTH, height: CARD_HEIGHT, borderRadius: 14, overflow: "hidden" }}>
       <ShimmerBox width={CARD_WIDTH} height={CARD_HEIGHT} borderRadius={14} />
     </View>
   );
-}
+});
 
-export function SkeletonWideCard() {
+export const SkeletonWideCard = React.memo(function SkeletonWideCard() {
   return (
     <View style={styles.wideCard}>
       <ShimmerBox width={90} height={130} borderRadius={0} />
@@ -63,7 +63,7 @@ export function SkeletonWideCard() {
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   wideCard: {

@@ -73,6 +73,10 @@ export default function SeasonDetailScreen() {
         keyExtractor={(_, i) => `row-${i}`}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+        windowSize={5}
+        maxToRenderPerBatch={6}
+        initialNumToRender={8}
+        removeClippedSubviews={Platform.OS !== "web"}
         ListHeaderComponent={() => (
           <View>
             <LinearGradient

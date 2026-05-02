@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FlatList,
   Platform,
@@ -82,7 +82,7 @@ export default function TopScreen() {
     queryFn: () => fetchTopAnime(1, safeFilter, activeType, contentType, isAdultMode),
   });
 
-  const renderHeader = () => (
+  const renderHeader = useCallback(() => (
     <View>
       <LinearGradient colors={["rgba(78,205,196,0.15)", "transparent"]} style={styles.headerGradient}>
         <View style={[styles.headerContent, { paddingTop: Platform.OS === "web" ? insets.top + 67 : insets.top + 12 }]}>
@@ -149,7 +149,7 @@ export default function TopScreen() {
         </View>
       )}
     </View>
-  );
+  ), [insets.top, isManga, safeFilter, filter, animeType, mangaType, isLoading, isError, isAdultMode]);
 
   return (
     <View style={styles.container}>
@@ -160,6 +160,10 @@ export default function TopScreen() {
         renderItem={({ item, index }) => <AnimeCardWide anime={item} index={index} />}
         contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? insets.bottom + 84 : insets.bottom + 90 }}
         showsVerticalScrollIndicator={false}
+        windowSize={5}
+        maxToRenderPerBatch={6}
+        initialNumToRender={8}
+        removeClippedSubviews={Platform.OS !== "web"}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.dark.secondary} />}
         ListEmptyComponent={isLoading ? null : (
           <View style={styles.errorContainer}>

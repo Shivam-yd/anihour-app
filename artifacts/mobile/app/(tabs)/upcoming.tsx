@@ -1,8 +1,7 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React from "react";
+import React, { useCallback, useMemo } from "react";
 import {
-  Dimensions,
   FlatList,
   Platform,
   RefreshControl,
@@ -20,8 +19,6 @@ import Colors from "@/constants/colors";
 import { useContentSettings } from "@/lib/content-settings";
 import { fetchUpcoming } from "@/lib/jikan";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
 export default function UpcomingScreen() {
   const insets = useSafeAreaInsets();
   const { contentType, isAdultMode } = useContentSettings();
@@ -32,9 +29,7 @@ export default function UpcomingScreen() {
     queryFn: () => fetchUpcoming(1, contentType, isAdultMode),
   });
 
-  const rows = anime ? chunkArray(anime, 2) : [];
-
-  const renderHeader = () => (
+  const renderHeader = useCallback(() => (
     <View>
       <LinearGradient colors={["rgba(69,183,209,0.15)", "transparent"]} style={styles.headerGradient}>
         <View style={[styles.headerContent, { paddingTop: Platform.OS === "web" ? insets.top + 67 : insets.top + 12 }]}>
@@ -70,7 +65,9 @@ export default function UpcomingScreen() {
         </View>
       )}
     </View>
-  );
+  ), [insets.top, isManga, isLoading, isError]);
+
+  const rows = useMemo(() => (anime ? chunkArray(anime, 2) : []), [anime]);
 
   return (
     <View style={styles.container}>
@@ -85,6 +82,10 @@ export default function UpcomingScreen() {
         )}
         contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? insets.bottom + 84 : insets.bottom + 90 }}
         showsVerticalScrollIndicator={false}
+        windowSize={5}
+        maxToRenderPerBatch={6}
+        initialNumToRender={8}
+        removeClippedSubviews={Platform.OS !== "web"}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.dark.accent} />}
         ListEmptyComponent={isLoading ? null : (
           <View style={styles.errorContainer}>
