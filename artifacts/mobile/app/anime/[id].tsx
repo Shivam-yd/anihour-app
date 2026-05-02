@@ -289,7 +289,10 @@ export default function AnimeDetailScreen() {
 
         {/* Official Trailer */}
         {!isManga && (() => {
-          const ytId = anime.trailer?.youtube_id;
+          const ytId =
+            anime.trailer?.youtube_id ||
+            anime.trailer?.embed_url?.match(/embed\/([a-zA-Z0-9_-]{11})/)?.[1] ||
+            null;
           const thumbUrl = ytId
             ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`
             : null;
