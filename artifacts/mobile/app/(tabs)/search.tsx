@@ -118,11 +118,6 @@ export default function SearchScreen() {
 
   const handleClear = useCallback(() => {
     setQuery("");
-    setResults([]);
-    setHasSearched(false);
-    setError(false);
-    setPage(1);
-    setHasMore(false);
     inputRef.current?.focus();
   }, []);
 
