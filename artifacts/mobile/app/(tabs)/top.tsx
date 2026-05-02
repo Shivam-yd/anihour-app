@@ -1,24 +1,25 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useQuery } from "@tanstack/react-query";
 
 import { AnimeCardWide } from "@/components/AnimeCard";
 import { ContentToggleBar } from "@/components/ContentToggleBar";
 import { SkeletonWideCard } from "@/components/SkeletonCard";
 import Colors from "@/constants/colors";
 import { useContentSettings } from "@/lib/content-settings";
-import { fetchTopAnime } from "@/lib/jikan";
+import { fetchTopAnime, Anime } from "@/lib/jikan";
 
 type Filter = "bypopularity" | "" | "airing" | "upcoming";
 type AnimeType = "all" | "tv" | "movie" | "ova" | "special" | "ona";
@@ -62,25 +63,72 @@ export default function TopScreen() {
   const { contentType, isAdultMode } = useContentSettings();
   const isManga = contentType === "manga";
 
-  // Reset filters whenever content type or adult mode changes
+  const [allAnime, setAllAnime] = useState<Anime[]>([]);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [error, setError] = useState(false);
+
+  const safeFilter: Filter =
+    isManga && (filter === "airing" || filter === "upcoming") ? "bypopularity" : filter;
+  const activeType = isManga
+    ? (mangaType === "all" ? undefined : mangaType)
+    : (animeType === "all" ? undefined : animeType);
+
+  const load = useCallback(async (
+    p: number,
+    f: Filter,
+    type: string | undefined,
+    ct: typeof contentType,
+    adult: boolean,
+    refresh = false
+  ) => {
+    if (refresh) setIsRefreshing(true);
+    else if (p === 1) { setLoading(true); setError(false); }
+    else setLoadingMore(true);
+
+    try {
+      const safF: Filter = ct === "manga" && (f === "airing" || f === "upcoming") ? "bypopularity" : f;
+      const items = await fetchTopAnime(p, safF, type, ct, adult);
+      setAllAnime(prev => p === 1 ? items : [...prev, ...items]);
+      setHasMore(items.length > 0);
+    } catch {
+      if (p === 1) setError(true);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+      setIsRefreshing(false);
+    }
+  }, []);
+
   useEffect(() => {
     setFilter("bypopularity");
     setAnimeType("all");
     setMangaType("all");
   }, [contentType, isAdultMode]);
 
-  // Manga only supports bypopularity and top-rated (no airing/upcoming)
-  const safeFilter: Filter =
-    isManga && (filter === "airing" || filter === "upcoming") ? "bypopularity" : filter;
+  useEffect(() => {
+    setAllAnime([]);
+    setPage(1);
+    setHasMore(true);
+    setError(false);
+    load(1, safeFilter, activeType, contentType, isAdultMode);
+  }, [safeFilter, activeType, contentType, isAdultMode]);
 
-  const activeType = isManga
-    ? (mangaType === "all" ? undefined : mangaType)
-    : (animeType === "all" ? undefined : animeType);
+  const handleLoadMore = useCallback(() => {
+    const next = page + 1;
+    setPage(next);
+    load(next, safeFilter, activeType, contentType, isAdultMode);
+  }, [page, safeFilter, activeType, contentType, isAdultMode, load]);
 
-  const { data: anime, isLoading, isError, refetch, isRefetching } = useQuery({
-    queryKey: ["top-anime", safeFilter, activeType, contentType, isAdultMode],
-    queryFn: () => fetchTopAnime(1, safeFilter, activeType, contentType, isAdultMode),
-  });
+  const handleRefresh = useCallback(() => {
+    setAllAnime([]);
+    setPage(1);
+    setHasMore(true);
+    load(1, safeFilter, activeType, contentType, isAdultMode, true);
+  }, [safeFilter, activeType, contentType, isAdultMode, load]);
 
   const renderHeader = useCallback(() => (
     <View>
@@ -137,35 +185,57 @@ export default function TopScreen() {
         </>
       )}
 
-      {isLoading && (
+      {loading && (
         <View>{Array.from({ length: 6 }).map((_, i) => <SkeletonWideCard key={i} />)}</View>
       )}
 
-      {isError && (
+      {error && (
         <View style={styles.errorContainer}>
           <Ionicons name="cloud-offline-outline" size={48} color={Colors.dark.textTertiary} />
           <Text style={styles.errorTitle}>Failed to load</Text>
           <Text style={styles.errorText}>Check your connection and try again</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={handleRefresh} activeOpacity={0.8}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>
-  ), [insets.top, isManga, safeFilter, filter, animeType, mangaType, isLoading, isError, isAdultMode]);
+  ), [insets.top, isManga, safeFilter, filter, animeType, mangaType, loading, error, isAdultMode, handleRefresh]);
+
+  const renderFooter = useCallback(() => {
+    if (!hasMore || loading || error || allAnime.length === 0) return null;
+    return (
+      <TouchableOpacity
+        style={styles.loadMoreBtn}
+        onPress={handleLoadMore}
+        disabled={loadingMore}
+        activeOpacity={0.8}
+      >
+        {loadingMore ? (
+          <ActivityIndicator size="small" color={Colors.dark.secondary} />
+        ) : (
+          <Text style={styles.loadMoreText}>Load More</Text>
+        )}
+      </TouchableOpacity>
+    );
+  }, [hasMore, loading, error, allAnime.length, loadingMore, handleLoadMore]);
 
   return (
     <View style={styles.container}>
       <FlatList
-        data={anime ?? []}
+        data={loading ? [] : allAnime}
         keyExtractor={(item) => `${item.mal_id}`}
         ListHeaderComponent={renderHeader}
         renderItem={({ item, index }) => <AnimeCardWide anime={item} index={index} />}
+        ListFooterComponent={renderFooter}
         contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? insets.bottom + 84 : insets.bottom + 90 }}
         showsVerticalScrollIndicator={false}
         windowSize={5}
         maxToRenderPerBatch={6}
         initialNumToRender={8}
         removeClippedSubviews={Platform.OS !== "web"}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.dark.secondary} />}
-        ListEmptyComponent={isLoading ? null : (
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={Colors.dark.secondary} />}
+        ListEmptyComponent={loading || error ? null : (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>No content found</Text>
           </View>
@@ -207,4 +277,17 @@ const styles = StyleSheet.create({
   errorContainer: { alignItems: "center", justifyContent: "center", paddingTop: 60, gap: 12 },
   errorTitle: { color: Colors.dark.text, fontSize: 18, fontFamily: "Inter_600SemiBold" },
   errorText: { color: Colors.dark.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center" },
+  retryBtn: {
+    paddingHorizontal: 20, paddingVertical: 10,
+    backgroundColor: Colors.dark.surface, borderRadius: 10,
+    borderWidth: 1, borderColor: Colors.dark.secondary,
+  },
+  retryText: { color: Colors.dark.secondary, fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  loadMoreBtn: {
+    marginHorizontal: 16, marginVertical: 16, paddingVertical: 14,
+    backgroundColor: Colors.dark.surface, borderRadius: 12,
+    borderWidth: 1, borderColor: Colors.dark.secondary,
+    alignItems: "center", justifyContent: "center",
+  },
+  loadMoreText: { color: Colors.dark.secondary, fontSize: 14, fontFamily: "Inter_600SemiBold" },
 });

@@ -2,6 +2,12 @@ import { ContentType } from "./content-settings";
 
 const BASE_URL = "https://api.jikan.moe/v4";
 
+function getApiBaseUrl(): string {
+  const domain = process.env["EXPO_PUBLIC_DOMAIN"];
+  if (domain) return `https://${domain}/api`;
+  return "/api";
+}
+
 export interface AnimeImage {
   jpg: {
     image_url: string;
@@ -230,7 +236,57 @@ export async function fetchSeasonArchive(
   return deduplicateById(filterSFW(data.data ?? []));
 }
 
+function mapCategoryToBadge(category: string): string {
+  const c = category.toLowerCase();
+  if (c.includes("review")) return "REVIEW";
+  if (c.includes("interview")) return "INTERVIEW";
+  if (c.includes("episode") || c.includes("preview")) return "EPISODE";
+  return "NEWS";
+}
+
 export async function fetchAnimeNews(): Promise<NewsItem[]> {
+  const apiBase = getApiBaseUrl();
+
+  try {
+    const res = await fetch(`${apiBase}/news`, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout ? AbortSignal.timeout(6000) : undefined,
+    } as RequestInit);
+
+    if (res.ok) {
+      const data = await res.json() as {
+        items: Array<{
+          id: number;
+          title: string;
+          excerpt: string;
+          url: string;
+          date: string;
+          author: string;
+          imageUrl: string | null;
+          category: string;
+        }>;
+      };
+
+      if (data.items && data.items.length > 0) {
+        return data.items.map((item) => ({
+          mal_id: item.id,
+          title: item.title,
+          excerpt: item.excerpt,
+          url: item.url,
+          date: item.date,
+          author_username: item.author,
+          images: { jpg: { image_url: item.imageUrl ?? "" } },
+          comments: 0,
+          badge: mapCategoryToBadge(item.category),
+        }));
+      }
+    }
+  } catch {}
+
+  return generateFallbackNews();
+}
+
+async function generateFallbackNews(): Promise<NewsItem[]> {
   const now = new Date().toISOString();
   const newsItems: NewsItem[] = [];
 

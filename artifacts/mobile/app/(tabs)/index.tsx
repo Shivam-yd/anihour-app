@@ -1,10 +1,11 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   FlatList,
   Platform,
@@ -16,7 +17,6 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useQuery } from "@tanstack/react-query";
 
 import { AnimeCard, AnimeCardWide } from "@/components/AnimeCard";
 import { ContentToggleBar } from "@/components/ContentToggleBar";
@@ -34,6 +34,12 @@ function getCurrentSeason(): string {
   if (month < 6) return "Spring";
   if (month < 9) return "Summer";
   return "Fall";
+}
+
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const result: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size));
+  return result;
 }
 
 function FeaturedHero({ anime, onPress }: { anime: Anime; onPress: () => void }) {
@@ -119,10 +125,65 @@ export default function SeasonScreen() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const { contentType, isAdultMode } = useContentSettings();
 
-  const { data: anime, isLoading, isError, refetch, isRefetching } = useQuery({
-    queryKey: ["season-now", contentType, isAdultMode],
-    queryFn: () => fetchSeasonNow(1, contentType, isAdultMode),
-  });
+  const [allAnime, setAllAnime] = useState<Anime[]>([]);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [error, setError] = useState(false);
+  const heroAnime = useRef<Anime[]>([]);
+
+  const load = useCallback(async (
+    p: number,
+    ct: typeof contentType,
+    adult: boolean,
+    refresh = false
+  ) => {
+    if (refresh) setIsRefreshing(true);
+    else if (p === 1) { setLoading(true); setError(false); }
+    else setLoadingMore(true);
+
+    try {
+      const items = await fetchSeasonNow(p, ct, adult);
+      if (p === 1) {
+        heroAnime.current = items.slice(0, 5);
+        setAllAnime(items);
+      } else {
+        setAllAnime(prev => [...prev, ...items]);
+      }
+      setHasMore(items.length > 0);
+    } catch {
+      if (p === 1) setError(true);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+      setIsRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    setAllAnime([]);
+    setPage(1);
+    setHasMore(true);
+    setError(false);
+    heroAnime.current = [];
+    load(1, contentType, isAdultMode);
+  }, [contentType, isAdultMode, load]);
+
+  const handleLoadMore = useCallback(() => {
+    const next = page + 1;
+    setPage(next);
+    load(next, contentType, isAdultMode);
+  }, [page, contentType, isAdultMode, load]);
+
+  const handleRefresh = useCallback(() => {
+    setAllAnime([]);
+    setPage(1);
+    setHasMore(true);
+    heroAnime.current = [];
+    load(1, contentType, isAdultMode, true);
+  }, [contentType, isAdultMode, load]);
 
   const season = getCurrentSeason();
   const year = new Date().getFullYear();
@@ -145,18 +206,28 @@ export default function SeasonScreen() {
           </View>
           <TouchableOpacity
             style={styles.viewToggle}
-            onPress={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
+            onPress={() => setViewMode(v => v === "grid" ? "list" : "grid")}
             activeOpacity={0.8}
           >
             <Ionicons name={viewMode === "grid" ? "list" : "grid"} size={18} color={Colors.dark.primary} />
           </TouchableOpacity>
         </View>
+
+        <TouchableOpacity
+          style={styles.archiveBtn}
+          onPress={() => router.push("/seasons")}
+          activeOpacity={0.8}
+        >
+          <Feather name="archive" size={13} color={Colors.dark.accent} />
+          <Text style={styles.archiveBtnText}>Browse Season Archive</Text>
+          <Feather name="chevron-right" size={13} color={Colors.dark.textTertiary} />
+        </TouchableOpacity>
       </LinearGradient>
 
       <ContentToggleBar />
 
-      {!isLoading && !isError && anime && anime.length > 0 && (
-        <HeroSlider anime={anime} />
+      {!loading && !error && allAnime.length > 0 && (
+        <HeroSlider anime={heroAnime.current} />
       )}
 
       <View style={styles.sectionRow}>
@@ -165,36 +236,58 @@ export default function SeasonScreen() {
       </View>
       <View style={{ height: 4 }} />
 
-      {isLoading && (
+      {loading && (
         <View style={styles.skeletonGrid}>
           {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
         </View>
       )}
 
-      {isError && (
+      {error && (
         <View style={styles.errorContainer}>
           <Ionicons name="cloud-offline-outline" size={48} color={Colors.dark.textTertiary} />
           <Text style={styles.errorTitle}>Failed to load</Text>
           <Text style={styles.errorText}>Check your connection and try again</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={handleRefresh} activeOpacity={0.8}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>
-  ), [insets.top, viewMode, headerTitle, sectionTitle, isLoading, isError, anime]);
+  ), [insets.top, viewMode, headerTitle, sectionTitle, loading, error, allAnime.length, handleRefresh]);
 
-  // Exclude the first 5 items already shown in the hero slider
-  const gridAnime = useMemo(() => (anime ? anime.slice(5) : []), [anime]);
+  const renderFooter = useCallback(() => {
+    if (!hasMore || loading || error || allAnime.length === 0) return null;
+    return (
+      <TouchableOpacity
+        style={styles.loadMoreBtn}
+        onPress={handleLoadMore}
+        disabled={loadingMore}
+        activeOpacity={0.8}
+      >
+        {loadingMore ? (
+          <ActivityIndicator size="small" color={Colors.dark.primary} />
+        ) : (
+          <Text style={styles.loadMoreText}>Load More</Text>
+        )}
+      </TouchableOpacity>
+    );
+  }, [hasMore, loading, error, allAnime.length, loadingMore, handleLoadMore]);
+
+  const gridAnime = useMemo(() => allAnime.slice(5), [allAnime]);
   const rows = useMemo(() => chunkArray(gridAnime, 2), [gridAnime]);
 
   return (
     <View style={styles.container}>
       {viewMode === "grid" ? (
         <FlatList
-          data={rows}
+          data={loading ? [] : rows}
           keyExtractor={(_, i) => `row-${i}`}
           ListHeaderComponent={renderHeader}
+          ListFooterComponent={renderFooter}
           renderItem={({ item: row }) => (
             <View style={styles.gridRow}>
               {row.map((a) => <AnimeCard key={`${a.mal_id}`} anime={a} />)}
+              {row.length < 2 && <View style={{ flex: 1 }} />}
             </View>
           )}
           contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? insets.bottom + 84 : insets.bottom + 90 }}
@@ -203,13 +296,14 @@ export default function SeasonScreen() {
           maxToRenderPerBatch={6}
           initialNumToRender={8}
           removeClippedSubviews={Platform.OS !== "web"}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.dark.primary} />}
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={Colors.dark.primary} />}
         />
       ) : (
         <FlatList
-          data={anime ?? []}
+          data={loading ? [] : allAnime}
           keyExtractor={(item) => `${item.mal_id}`}
           ListHeaderComponent={renderHeader}
+          ListFooterComponent={renderFooter}
           renderItem={({ item, index }) => <AnimeCardWide anime={item} index={index} />}
           contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? insets.bottom + 84 : insets.bottom + 90 }}
           showsVerticalScrollIndicator={false}
@@ -217,8 +311,8 @@ export default function SeasonScreen() {
           maxToRenderPerBatch={6}
           initialNumToRender={8}
           removeClippedSubviews={Platform.OS !== "web"}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.dark.primary} />}
-          ListEmptyComponent={isLoading ? null : (
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={Colors.dark.primary} />}
+          ListEmptyComponent={loading ? null : (
             <View style={styles.errorContainer}>
               <Text style={styles.errorText}>No content found</Text>
             </View>
@@ -229,18 +323,12 @@ export default function SeasonScreen() {
   );
 }
 
-function chunkArray<T>(arr: T[], size: number): T[][] {
-  const result: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size));
-  return result;
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.dark.background },
-  headerGradient: { paddingBottom: 4 },
+  headerGradient: { paddingBottom: 10 },
   headerContent: {
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingBottom: 8,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -252,6 +340,15 @@ const styles = StyleSheet.create({
     borderRadius: 12, alignItems: "center", justifyContent: "center",
     borderWidth: 1, borderColor: Colors.dark.primary,
   },
+  archiveBtn: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    marginHorizontal: 16, marginBottom: 2,
+    paddingHorizontal: 12, paddingVertical: 7,
+    backgroundColor: Colors.dark.accentLight,
+    borderRadius: 8, borderWidth: 1, borderColor: Colors.dark.accent,
+    alignSelf: "flex-start",
+  },
+  archiveBtnText: { color: Colors.dark.accent, fontSize: 12, fontFamily: "Inter_600SemiBold" },
   heroContainer: { marginHorizontal: 16, marginBottom: 16 },
   heroCard: {
     height: 220, borderRadius: 16, overflow: "hidden",
@@ -287,4 +384,17 @@ const styles = StyleSheet.create({
   errorContainer: { alignItems: "center", justifyContent: "center", paddingTop: 60, gap: 12 },
   errorTitle: { color: Colors.dark.text, fontSize: 18, fontFamily: "Inter_600SemiBold" },
   errorText: { color: Colors.dark.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center" },
+  retryBtn: {
+    paddingHorizontal: 20, paddingVertical: 10,
+    backgroundColor: Colors.dark.surface, borderRadius: 10,
+    borderWidth: 1, borderColor: Colors.dark.primary,
+  },
+  retryText: { color: Colors.dark.primary, fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  loadMoreBtn: {
+    marginHorizontal: 16, marginVertical: 16, paddingVertical: 14,
+    backgroundColor: Colors.dark.surface, borderRadius: 12,
+    borderWidth: 1, borderColor: Colors.dark.primary,
+    alignItems: "center", justifyContent: "center",
+  },
+  loadMoreText: { color: Colors.dark.primary, fontSize: 14, fontFamily: "Inter_600SemiBold" },
 });

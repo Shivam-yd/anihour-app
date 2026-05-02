@@ -1,33 +1,84 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   Platform,
   RefreshControl,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useQuery } from "@tanstack/react-query";
 
 import { AnimeCard } from "@/components/AnimeCard";
 import { ContentToggleBar } from "@/components/ContentToggleBar";
 import { SkeletonCard } from "@/components/SkeletonCard";
 import Colors from "@/constants/colors";
 import { useContentSettings } from "@/lib/content-settings";
-import { fetchUpcoming } from "@/lib/jikan";
+import { fetchUpcoming, Anime } from "@/lib/jikan";
+
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const result: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size));
+  return result;
+}
 
 export default function UpcomingScreen() {
   const insets = useSafeAreaInsets();
   const { contentType, isAdultMode } = useContentSettings();
   const isManga = contentType === "manga";
 
-  const { data: anime, isLoading, isError, refetch, isRefetching } = useQuery({
-    queryKey: ["upcoming", contentType, isAdultMode],
-    queryFn: () => fetchUpcoming(1, contentType, isAdultMode),
-  });
+  const [allAnime, setAllAnime] = useState<Anime[]>([]);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [error, setError] = useState(false);
+
+  const load = useCallback(async (p: number, ct: typeof contentType, adult: boolean, refresh = false) => {
+    if (refresh) setIsRefreshing(true);
+    else if (p === 1) { setLoading(true); setError(false); }
+    else setLoadingMore(true);
+
+    try {
+      const items = await fetchUpcoming(p, ct, adult);
+      setAllAnime(prev => p === 1 ? items : [...prev, ...items]);
+      setHasMore(items.length > 0);
+    } catch {
+      if (p === 1) setError(true);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+      setIsRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    setAllAnime([]);
+    setPage(1);
+    setHasMore(true);
+    setError(false);
+    load(1, contentType, isAdultMode);
+  }, [contentType, isAdultMode, load]);
+
+  const handleLoadMore = useCallback(() => {
+    const next = page + 1;
+    setPage(next);
+    load(next, contentType, isAdultMode);
+  }, [page, contentType, isAdultMode, load]);
+
+  const handleRefresh = useCallback(() => {
+    setAllAnime([]);
+    setPage(1);
+    setHasMore(true);
+    load(1, contentType, isAdultMode, true);
+  }, [contentType, isAdultMode, load]);
+
+  const rows = chunkArray(allAnime, 2);
 
   const renderHeader = useCallback(() => (
     <View>
@@ -52,42 +103,63 @@ export default function UpcomingScreen() {
         </Text>
       </View>
 
-      {isLoading && (
+      {loading && (
         <View style={styles.skeletonGrid}>
           {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
         </View>
       )}
-      {isError && (
+      {error && (
         <View style={styles.errorContainer}>
           <Ionicons name="cloud-offline-outline" size={48} color={Colors.dark.textTertiary} />
           <Text style={styles.errorTitle}>Failed to load</Text>
           <Text style={styles.errorText}>Check your connection and try again</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={handleRefresh} activeOpacity={0.8}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>
-  ), [insets.top, isManga, isLoading, isError]);
+  ), [insets.top, isManga, loading, error, handleRefresh]);
 
-  const rows = useMemo(() => (anime ? chunkArray(anime, 2) : []), [anime]);
+  const renderFooter = useCallback(() => {
+    if (!hasMore || loading || error || allAnime.length === 0) return null;
+    return (
+      <TouchableOpacity
+        style={styles.loadMoreBtn}
+        onPress={handleLoadMore}
+        disabled={loadingMore}
+        activeOpacity={0.8}
+      >
+        {loadingMore ? (
+          <ActivityIndicator size="small" color={Colors.dark.accent} />
+        ) : (
+          <Text style={styles.loadMoreText}>Load More</Text>
+        )}
+      </TouchableOpacity>
+    );
+  }, [hasMore, loading, error, allAnime.length, loadingMore, handleLoadMore]);
 
   return (
     <View style={styles.container}>
       <FlatList
-        data={rows}
+        data={loading ? [] : rows}
         keyExtractor={(_, i) => `row-${i}`}
         ListHeaderComponent={renderHeader}
         renderItem={({ item: row }) => (
           <View style={styles.gridRow}>
             {row.map((a) => <AnimeCard key={a.mal_id} anime={a} />)}
+            {row.length < 2 && <View style={{ flex: 1 }} />}
           </View>
         )}
+        ListFooterComponent={renderFooter}
         contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? insets.bottom + 84 : insets.bottom + 90 }}
         showsVerticalScrollIndicator={false}
         windowSize={5}
         maxToRenderPerBatch={6}
         initialNumToRender={8}
         removeClippedSubviews={Platform.OS !== "web"}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.dark.accent} />}
-        ListEmptyComponent={isLoading ? null : (
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={Colors.dark.accent} />}
+        ListEmptyComponent={loading || error ? null : (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>No upcoming content found</Text>
           </View>
@@ -95,12 +167,6 @@ export default function UpcomingScreen() {
       />
     </View>
   );
-}
-
-function chunkArray<T>(arr: T[], size: number): T[][] {
-  const result: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size));
-  return result;
 }
 
 const styles = StyleSheet.create({
@@ -123,4 +189,17 @@ const styles = StyleSheet.create({
   errorContainer: { alignItems: "center", justifyContent: "center", paddingTop: 60, gap: 12 },
   errorTitle: { color: Colors.dark.text, fontSize: 18, fontFamily: "Inter_600SemiBold" },
   errorText: { color: Colors.dark.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center" },
+  retryBtn: {
+    paddingHorizontal: 20, paddingVertical: 10,
+    backgroundColor: Colors.dark.surface, borderRadius: 10,
+    borderWidth: 1, borderColor: Colors.dark.accent,
+  },
+  retryText: { color: Colors.dark.accent, fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  loadMoreBtn: {
+    marginHorizontal: 16, marginVertical: 16, paddingVertical: 14,
+    backgroundColor: Colors.dark.surface, borderRadius: 12,
+    borderWidth: 1, borderColor: Colors.dark.accent,
+    alignItems: "center", justifyContent: "center",
+  },
+  loadMoreText: { color: Colors.dark.accent, fontSize: 14, fontFamily: "Inter_600SemiBold" },
 });

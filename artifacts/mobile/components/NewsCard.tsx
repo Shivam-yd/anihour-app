@@ -31,6 +31,10 @@ const BADGE_COLORS: Record<string, { bg: string; border: string; text: string }>
   AIRING: { bg: Colors.dark.primaryLight, border: Colors.dark.primary, text: Colors.dark.primary },
   NEW: { bg: Colors.dark.secondaryLight, border: Colors.dark.secondary, text: Colors.dark.secondary },
   TRENDING: { bg: Colors.dark.warningLight, border: Colors.dark.warning, text: Colors.dark.warning },
+  NEWS: { bg: "rgba(69,183,209,0.15)", border: Colors.dark.accent, text: Colors.dark.accent },
+  REVIEW: { bg: "rgba(102,187,106,0.15)", border: Colors.dark.success, text: Colors.dark.success },
+  EPISODE: { bg: "rgba(171,71,188,0.15)", border: "#ab47bc", text: "#ab47bc" },
+  INTERVIEW: { bg: Colors.dark.secondaryLight, border: Colors.dark.secondary, text: Colors.dark.secondary },
 };
 
 export function NewsCard({ article }: Props) {
@@ -47,7 +51,9 @@ export function NewsCard({ article }: Props) {
   }, [article.url]);
 
   const imageUrl = article.images?.jpg?.image_url;
-  const badgeStyle = article.badge ? (BADGE_COLORS[article.badge] ?? BADGE_COLORS.AIRING) : null;
+  const badgeStyle = article.badge
+    ? (BADGE_COLORS[article.badge] ?? BADGE_COLORS.NEWS)
+    : null;
 
   return (
     <AnimatedPressable
