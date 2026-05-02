@@ -22,8 +22,6 @@ import Colors from "@/constants/colors";
 import { fetchAnimeByGenre, type ContentType, type Anime } from "@/lib/jikan";
 import { chunkArray } from "@/lib/utils";
 
-const PAGE_SIZE = 25;
-
 export default function GenreScreen() {
   const { id, name, contentType } = useLocalSearchParams<{
     id: string;
@@ -50,9 +48,10 @@ export default function GenreScreen() {
     else setLoadingMore(true);
 
     try {
-      const items = await fetchAnimeByGenre(genreId, p, ct);
+      const { items, hasNext } = await fetchAnimeByGenre(genreId, p, ct);
       setAllAnime(prev => p === 1 ? items : [...prev, ...items]);
-      setHasMore(items.length >= PAGE_SIZE);
+      setHasMore(hasNext);
+      setPage(p);
     } catch {
       if (p === 1) setError(true);
     } finally {
@@ -71,10 +70,9 @@ export default function GenreScreen() {
   }, [load]);
 
   const handleLoadMore = useCallback(() => {
-    const next = page + 1;
-    setPage(next);
-    load(next);
-  }, [page, load]);
+    if (loadingMore || !hasMore) return;
+    load(page + 1);
+  }, [loadingMore, hasMore, page, load]);
 
   const handleRefresh = useCallback(() => {
     setAllAnime([]);

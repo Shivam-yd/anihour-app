@@ -43,9 +43,10 @@ export default function UpcomingScreen() {
     else setLoadingMore(true);
 
     try {
-      const items = await fetchUpcoming(p, ct, adult);
+      const { items, hasNext } = await fetchUpcoming(p, ct, adult);
       setAllAnime(prev => p === 1 ? items : [...prev, ...items]);
-      setHasMore(items.length > 0);
+      setHasMore(hasNext);
+      setPage(p);
     } catch {
       if (p === 1) setError(true);
     } finally {
@@ -64,10 +65,9 @@ export default function UpcomingScreen() {
   }, [contentType, isAdultMode, load]);
 
   const handleLoadMore = useCallback(() => {
-    const next = page + 1;
-    setPage(next);
-    load(next, contentType, isAdultMode);
-  }, [page, contentType, isAdultMode, load]);
+    if (loadingMore || !hasMore) return;
+    load(page + 1, contentType, isAdultMode);
+  }, [loadingMore, hasMore, page, contentType, isAdultMode, load]);
 
   const handleRefresh = useCallback(() => {
     setAllAnime([]);

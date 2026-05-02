@@ -150,6 +150,7 @@ async function fetchWithRetry(url: string, retries = 3): Promise<unknown> {
       });
       clearTimeout(timer);
       if (res.status === 429) {
+        if (i === retries) throw new Error("Rate limit exceeded");
         await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
         continue;
       }
@@ -161,13 +162,14 @@ async function fetchWithRetry(url: string, retries = 3): Promise<unknown> {
       await new Promise((r) => setTimeout(r, 800 * (i + 1)));
     }
   }
+  throw new Error("Fetch failed");
 }
 
 export async function fetchSeasonNow(
   page = 1,
   contentType: ContentType = "anime",
   isAdult = false
-): Promise<Anime[]> {
+): Promise<{ items: Anime[]; hasNext: boolean }> {
   let url: string;
   if (isAdult) {
     const status = contentType === "manga" ? "publishing" : "airing";
@@ -177,9 +179,10 @@ export async function fetchSeasonNow(
   } else {
     url = `${BASE_URL}/seasons/now?page=${page}&limit=25&sfw=true`;
   }
-  const data = (await fetchWithRetry(url)) as { data: Anime[] };
+  const data = (await fetchWithRetry(url)) as { data: Anime[]; pagination?: { has_next_page: boolean } };
   const items = deduplicateById(data.data ?? []);
-  return isAdult ? items : filterSFW(items);
+  const filtered = isAdult ? items : filterSFW(items);
+  return { items: filtered, hasNext: data.pagination?.has_next_page ?? false };
 }
 
 export async function fetchTopAnime(
@@ -188,7 +191,7 @@ export async function fetchTopAnime(
   type?: string,
   contentType: ContentType = "anime",
   isAdult = false
-): Promise<Anime[]> {
+): Promise<{ items: Anime[]; hasNext: boolean }> {
   let url: string;
   if (isAdult) {
     const typeParam = type ? `&type=${type}` : "";
@@ -202,16 +205,17 @@ export async function fetchTopAnime(
     const filterParam = filter ? `&filter=${filter}` : "";
     url = `${BASE_URL}/top/anime?page=${page}&limit=25${filterParam}${typeParam}&sfw=true`;
   }
-  const data = (await fetchWithRetry(url)) as { data: Anime[] };
+  const data = (await fetchWithRetry(url)) as { data: Anime[]; pagination?: { has_next_page: boolean } };
   const items = deduplicateById(data.data ?? []);
-  return isAdult ? items : filterSFW(items);
+  const filtered = isAdult ? items : filterSFW(items);
+  return { items: filtered, hasNext: data.pagination?.has_next_page ?? false };
 }
 
 export async function fetchUpcoming(
   page = 1,
   contentType: ContentType = "anime",
   isAdult = false
-): Promise<Anime[]> {
+): Promise<{ items: Anime[]; hasNext: boolean }> {
   let url: string;
   if (isAdult) {
     url = `${BASE_URL}/${contentType}?genres=12&sfw=false&status=not_yet_aired&order_by=start_date&sort=asc&page=${page}&limit=25`;
@@ -220,19 +224,21 @@ export async function fetchUpcoming(
   } else {
     url = `${BASE_URL}/seasons/upcoming?page=${page}&limit=25&sfw=true`;
   }
-  const data = (await fetchWithRetry(url)) as { data: Anime[] };
+  const data = (await fetchWithRetry(url)) as { data: Anime[]; pagination?: { has_next_page: boolean } };
   const items = deduplicateById(data.data ?? []);
-  return isAdult ? items : filterSFW(items);
+  const filtered = isAdult ? items : filterSFW(items);
+  return { items: filtered, hasNext: data.pagination?.has_next_page ?? false };
 }
 
 export async function fetchAnimeByGenre(
   genreId: number,
   page = 1,
   contentType: ContentType = "anime"
-): Promise<Anime[]> {
+): Promise<{ items: Anime[]; hasNext: boolean }> {
   const url = `${BASE_URL}/${contentType}?genres=${genreId}&order_by=score&sort=desc&page=${page}&limit=25&sfw=true`;
-  const data = (await fetchWithRetry(url)) as { data: Anime[] };
-  return deduplicateById(filterSFW(data.data ?? []));
+  const data = (await fetchWithRetry(url)) as { data: Anime[]; pagination?: { has_next_page: boolean } };
+  const items = deduplicateById(filterSFW(data.data ?? []));
+  return { items, hasNext: data.pagination?.has_next_page ?? false };
 }
 
 function mapCategoryToBadge(category: string): string {

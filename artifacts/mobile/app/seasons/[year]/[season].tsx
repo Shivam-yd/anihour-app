@@ -47,6 +47,7 @@ export default function SeasonDetailScreen() {
         const result = await fetchSeasonArchiveHasNext(Number(year), season ?? "winter", p);
         setAllAnime((prev) => (p === 1 ? result.items : [...prev, ...result.items]));
         setHasNext(result.hasNext);
+        setPage(p);
       } catch {
         setError(true);
       } finally {
@@ -172,9 +173,7 @@ export default function SeasonDetailScreen() {
               style={[styles.loadMoreBtn, { borderColor: meta.color }]}
               activeOpacity={0.8}
               onPress={() => {
-                const next = page + 1;
-                setPage(next);
-                load(next);
+                if (!loadingMore) load(page + 1);
               }}
               disabled={loadingMore}
             >

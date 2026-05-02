@@ -143,14 +143,15 @@ export default function SeasonScreen() {
     else setLoadingMore(true);
 
     try {
-      const items = await fetchSeasonNow(p, ct, adult);
+      const { items, hasNext } = await fetchSeasonNow(p, ct, adult);
       if (p === 1) {
         heroAnime.current = items.slice(0, 5);
         setAllAnime(items);
       } else {
         setAllAnime(prev => [...prev, ...items]);
       }
-      setHasMore(items.length > 0);
+      setHasMore(hasNext);
+      setPage(p);
     } catch {
       if (p === 1) setError(true);
     } finally {
@@ -170,10 +171,9 @@ export default function SeasonScreen() {
   }, [contentType, isAdultMode, load]);
 
   const handleLoadMore = useCallback(() => {
-    const next = page + 1;
-    setPage(next);
-    load(next, contentType, isAdultMode);
-  }, [page, contentType, isAdultMode, load]);
+    if (loadingMore || !hasMore) return;
+    load(page + 1, contentType, isAdultMode);
+  }, [loadingMore, hasMore, page, contentType, isAdultMode, load]);
 
   const handleRefresh = useCallback(() => {
     setAllAnime([]);
