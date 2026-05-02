@@ -3,6 +3,7 @@ import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
+import { useScrollToTop } from "@react-navigation/native";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -119,6 +120,8 @@ export default function SeasonScreen() {
   const insets = useSafeAreaInsets();
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const { contentType, isAdultMode } = useContentSettings();
+  const flatListRef = useRef<FlatList>(null);
+  useScrollToTop(flatListRef);
 
   const [allAnime, setAllAnime] = useState<Anime[]>([]);
   const [page, setPage] = useState(1);
@@ -278,6 +281,7 @@ export default function SeasonScreen() {
     <View style={styles.container}>
       {viewMode === "grid" ? (
         <FlatList
+          ref={flatListRef}
           data={loading ? [] : rows}
           keyExtractor={(_, i) => `row-${i}`}
           ListHeaderComponent={renderHeader}
@@ -298,6 +302,7 @@ export default function SeasonScreen() {
         />
       ) : (
         <FlatList
+          ref={flatListRef}
           data={loading ? [] : allAnime}
           keyExtractor={(item) => `${item.mal_id}`}
           ListHeaderComponent={renderHeader}

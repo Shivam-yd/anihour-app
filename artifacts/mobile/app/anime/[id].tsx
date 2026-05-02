@@ -21,6 +21,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 
+import { ShimmerBox } from "@/components/SkeletonCard";
 import Colors from "@/constants/colors";
 import { isSafeUrl } from "@/lib/utils";
 import {
@@ -140,9 +141,20 @@ export default function AnimeDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={Colors.dark.primary} />
-        <Text style={styles.loadingText}>Loading...</Text>
+      <View style={[styles.container, { paddingTop: topOffset }]}>
+        <ShimmerBox width="100%" height={HEADER_HEIGHT} borderRadius={0} />
+        <View style={styles.skeletonBody}>
+          <ShimmerBox width="70%" height={14} borderRadius={6} />
+          <ShimmerBox width="90%" height={28} borderRadius={8} style={{ marginTop: 6 }} />
+          <View style={styles.skeletonBadgeRow}>
+            {[80, 100, 70].map((w, i) => <ShimmerBox key={i} width={w} height={28} borderRadius={6} />)}
+          </View>
+          <View style={styles.skeletonStatsRow}>
+            {[1, 2, 3, 4].map((i) => <ShimmerBox key={i} width={72} height={64} borderRadius={12} />)}
+          </View>
+          <ShimmerBox width="100%" height={80} borderRadius={8} style={{ marginTop: 20 }} />
+          <ShimmerBox width="100%" height={60} borderRadius={8} style={{ marginTop: 12 }} />
+        </View>
         {backBtn}
       </View>
     );
@@ -562,7 +574,9 @@ const styles = StyleSheet.create({
     flex: 1, alignItems: "center", justifyContent: "center",
     backgroundColor: Colors.dark.background, gap: 12,
   },
-  loadingText: { color: Colors.dark.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular" },
+  skeletonBody: { paddingHorizontal: 16, paddingTop: 16, gap: 0 },
+  skeletonBadgeRow: { flexDirection: "row", gap: 8, marginTop: 14 },
+  skeletonStatsRow: { flexDirection: "row", gap: 8, marginTop: 14 },
   errorTitle: { color: Colors.dark.text, fontSize: 18, fontFamily: "Inter_600SemiBold" },
   backBtn: {
     position: "absolute", left: 16, width: 40, height: 40, borderRadius: 20,

@@ -3,7 +3,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Dimensions,
   FlatList,
   Platform,
@@ -16,6 +15,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AnimeCard } from "@/components/AnimeCard";
+import { SkeletonCard } from "@/components/SkeletonCard";
 import Colors from "@/constants/colors";
 import { fetchSeasonArchiveHasNext, Anime } from "@/lib/jikan";
 import { chunkArray } from "@/lib/utils";
@@ -139,9 +139,8 @@ export default function SeasonDetailScreen() {
             </View>
 
             {loading && (
-              <View style={styles.centered}>
-                <ActivityIndicator size="large" color={meta.color} />
-                <Text style={styles.loadingText}>Loading...</Text>
+              <View style={styles.skeletonGrid}>
+                {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
               </View>
             )}
 
@@ -233,8 +232,8 @@ const styles = StyleSheet.create({
   sectionTitle: { color: Colors.dark.text, fontSize: 17, fontFamily: "Inter_700Bold" },
   gridRow: { flexDirection: "row", gap: 12, paddingHorizontal: 16, marginBottom: 12 },
   cardPlaceholder: { width: CARD_PLACEHOLDER_W },
+  skeletonGrid: { flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 16, gap: 12, paddingBottom: 8 },
   centered: { alignItems: "center", justifyContent: "center", paddingVertical: 60, gap: 12 },
-  loadingText: { color: Colors.dark.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular" },
   errorText: { color: Colors.dark.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center" },
   retryBtn: {
     paddingHorizontal: 20, paddingVertical: 10,

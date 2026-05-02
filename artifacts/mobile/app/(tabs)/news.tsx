@@ -1,6 +1,7 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useCallback } from "react";
+import { useScrollToTop } from "@react-navigation/native";
+import React, { useCallback, useRef } from "react";
 import {
   FlatList,
   Platform,
@@ -20,6 +21,8 @@ import { fetchAnimeNews, NewsItem } from "@/lib/jikan";
 
 export default function NewsScreen() {
   const insets = useSafeAreaInsets();
+  const flatListRef = useRef<FlatList>(null);
+  useScrollToTop(flatListRef);
 
   const { data: articles, isLoading, isError, refetch, isRefetching } = useQuery<NewsItem[]>({
     queryKey: ["anime-news"],
@@ -73,6 +76,7 @@ export default function NewsScreen() {
   return (
     <View style={styles.container}>
       <FlatList
+        ref={flatListRef}
         data={articles ?? []}
         keyExtractor={(item, index) => `news-${item.mal_id}-${index}`}
         ListHeaderComponent={renderHeader}

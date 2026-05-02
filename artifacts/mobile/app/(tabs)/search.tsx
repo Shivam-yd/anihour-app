@@ -1,6 +1,7 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
+import { useScrollToTop } from "@react-navigation/native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -66,6 +67,8 @@ export default function SearchScreen() {
   const [selectedStatus, setSelectedStatus] = useState<string | undefined>(undefined);
   const currentQueryRef = useRef("");
   const inputRef = useRef<TextInput>(null);
+  const resultsRef = useRef<FlatList>(null);
+  useScrollToTop(resultsRef);
   const { contentType, isAdultMode } = useContentSettings();
   const isManga = contentType === "manga";
   const suggestions = isManga ? MANGA_SUGGESTIONS : SUGGESTIONS;
@@ -273,6 +276,7 @@ export default function SearchScreen() {
             <Text style={styles.resultsText}>results for "{currentQueryRef.current}"</Text>
           </View>
           <FlatList
+            ref={resultsRef}
             data={results}
             keyExtractor={(item) => `${item.mal_id}`}
             renderItem={({ item, index }) => <AnimeCardWide anime={item} index={index} />}

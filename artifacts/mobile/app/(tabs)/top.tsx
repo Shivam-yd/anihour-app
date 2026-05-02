@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useCallback, useEffect, useState } from "react";
+import { useScrollToTop } from "@react-navigation/native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -58,6 +59,8 @@ const MANGA_TYPES: { key: MangaType; label: string }[] = [
 
 export default function TopScreen() {
   const insets = useSafeAreaInsets();
+  const flatListRef = useRef<FlatList>(null);
+  useScrollToTop(flatListRef);
   const [filter, setFilter] = useState<Filter>("bypopularity");
   const [animeType, setAnimeType] = useState<AnimeType>("all");
   const [mangaType, setMangaType] = useState<MangaType>("all");
@@ -220,6 +223,7 @@ export default function TopScreen() {
   return (
     <View style={styles.container}>
       <FlatList
+        ref={flatListRef}
         data={loading ? [] : allAnime}
         keyExtractor={(item) => `${item.mal_id}`}
         ListHeaderComponent={renderHeader}
