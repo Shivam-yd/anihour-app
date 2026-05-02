@@ -391,6 +391,33 @@ export async function fetchCharacters(
   }
 }
 
+export interface StudioInfo {
+  name: string;
+  imageUrl: string | null;
+  about: string | null;
+}
+
+export async function fetchStudioInfo(studioId: number): Promise<StudioInfo | null> {
+  try {
+    const data = (await fetchWithRetry(`${BASE_URL}/producers/${studioId}`)) as {
+      data: {
+        titles?: { title: string }[];
+        images?: { jpg?: { image_url?: string } };
+        about?: string;
+      };
+    };
+    const p = data.data;
+    if (!p) return null;
+    return {
+      name: p.titles?.[0]?.title ?? "",
+      imageUrl: p.images?.jpg?.image_url ?? null,
+      about: p.about ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchStudioAnime(studioId: number, page = 1): Promise<Anime[]> {
   const url = `${BASE_URL}/anime?producers=${studioId}&order_by=score&sort=desc&page=${page}&limit=24&sfw=true`;
   const data = (await fetchWithRetry(url)) as { data: Anime[]; pagination?: { has_next_page: boolean } };

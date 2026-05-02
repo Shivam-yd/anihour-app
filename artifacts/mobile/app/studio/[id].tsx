@@ -2,7 +2,7 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -16,7 +16,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Colors from "@/constants/colors";
-import { fetchStudioAnimeHasNext, Anime } from "@/lib/jikan";
+import { fetchStudioAnimeHasNext, fetchStudioInfo, StudioInfo, Anime } from "@/lib/jikan";
 
 const CARD_COLS = 3;
 
@@ -62,6 +62,7 @@ export default function StudioScreen() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
+  const [studioInfo, setStudioInfo] = useState<StudioInfo | null>(null);
 
   const load = useCallback(async (p: number) => {
     if (p === 1) { setLoading(true); setError(false); }
@@ -78,10 +79,15 @@ export default function StudioScreen() {
     }
   }, [id]);
 
-  React.useEffect(() => { load(1); }, [load]);
+  useEffect(() => {
+    load(1);
+    fetchStudioInfo(Number(id)).then((info) => {
+      if (info) setStudioInfo(info);
+    });
+  }, [load, id]);
 
   const rows = chunkArray(allAnime, CARD_COLS);
-  const studioName = name ?? "Studio";
+  const studioName = studioInfo?.name || name || "Studio";
 
   const avgScore =
     allAnime.length > 0
@@ -114,14 +120,29 @@ export default function StudioScreen() {
               </View>
 
               <View style={styles.studioHero}>
-                <View style={styles.studioIconBox}>
-                  <Ionicons name="film" size={32} color={Colors.dark.secondary} />
-                </View>
+                {studioInfo?.imageUrl ? (
+                  <Image
+                    source={{ uri: studioInfo.imageUrl }}
+                    style={styles.studioLogo}
+                    contentFit="contain"
+                    transition={300}
+                  />
+                ) : (
+                  <View style={styles.studioIconBox}>
+                    <Ionicons name="film" size={32} color={Colors.dark.secondary} />
+                  </View>
+                )}
                 <View style={{ flex: 1 }}>
                   <Text style={styles.studioName}>{studioName}</Text>
                   <Text style={styles.studioSub}>Anime Production Studio</Text>
                 </View>
               </View>
+
+              {studioInfo?.about ? (
+                <View style={styles.aboutBox}>
+                  <Text style={styles.aboutText} numberOfLines={4}>{studioInfo.about}</Text>
+                </View>
+              ) : null}
 
               <View style={styles.statsRow}>
                 <View style={styles.statBox}>
@@ -217,7 +238,12 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   breadcrumbText: { color: Colors.dark.textSecondary, fontSize: 14, fontFamily: "Inter_500Medium" },
-  studioHero: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 20 },
+  studioHero: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 14 },
+  studioLogo: {
+    width: 64, height: 64, borderRadius: 12,
+    backgroundColor: Colors.dark.surface,
+    borderWidth: 1, borderColor: Colors.dark.border,
+  },
   studioIconBox: {
     width: 64, height: 64, borderRadius: 16,
     backgroundColor: Colors.dark.secondaryLight,
@@ -226,6 +252,15 @@ const styles = StyleSheet.create({
   },
   studioName: { color: Colors.dark.text, fontSize: 22, fontFamily: "Inter_700Bold", flexShrink: 1 },
   studioSub: { color: Colors.dark.textSecondary, fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 3 },
+  aboutBox: {
+    backgroundColor: Colors.dark.surface, borderRadius: 12,
+    borderWidth: 1, borderColor: Colors.dark.border,
+    padding: 12, marginBottom: 14,
+  },
+  aboutText: {
+    color: Colors.dark.textSecondary, fontSize: 12,
+    fontFamily: "Inter_400Regular", lineHeight: 18,
+  },
   statsRow: {
     flexDirection: "row", backgroundColor: Colors.dark.surface,
     borderRadius: 14, borderWidth: 1, borderColor: Colors.dark.border, padding: 16,
