@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import * as Haptics from "expo-haptics";
 import * as WebBrowser from "expo-web-browser";
 import React, { useCallback } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -43,6 +44,7 @@ export function NewsCard({ article }: Props) {
 
   const handlePress = useCallback(async () => {
     if (article.url) {
+      Haptics.selectionAsync();
       await WebBrowser.openBrowserAsync(article.url, {
         presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
         toolbarColor: Colors.dark.background,

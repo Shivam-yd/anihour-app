@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import React, { useCallback } from "react";
 import {
@@ -39,6 +40,7 @@ export const AnimeCard = React.memo(function AnimeCard({ anime, rank }: Props) {
   }));
 
   const handlePress = useCallback(() => {
+    Haptics.selectionAsync();
     router.push({ pathname: "/anime/[id]", params: { id: anime.mal_id, contentType } });
   }, [anime.mal_id, contentType]);
 
@@ -100,6 +102,7 @@ export const AnimeCardWide = React.memo(function AnimeCardWide({ anime, index }:
   }));
 
   const handlePress = useCallback(() => {
+    Haptics.selectionAsync();
     router.push({ pathname: "/anime/[id]", params: { id: anime.mal_id, contentType } });
   }, [anime.mal_id, contentType]);
 

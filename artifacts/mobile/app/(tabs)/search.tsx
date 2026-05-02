@@ -254,6 +254,9 @@ export default function SearchScreen() {
           <Ionicons name="cloud-offline-outline" size={48} color={Colors.dark.textTertiary} />
           <Text style={styles.stateTitle}>Something went wrong</Text>
           <Text style={styles.stateText}>Check your connection and try again</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => doSearch(currentQueryRef.current, 1, selectedStatus)} activeOpacity={0.8}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       ) : results.length === 0 ? (
         <View style={styles.stateBox}>
@@ -351,6 +354,12 @@ const styles = StyleSheet.create({
   },
   resultsBadgeText: { color: Colors.dark.primary, fontSize: 12, fontFamily: "Inter_700Bold" },
   resultsText: { color: Colors.dark.textSecondary, fontSize: 13, fontFamily: "Inter_400Regular" },
+  retryBtn: {
+    paddingHorizontal: 20, paddingVertical: 10,
+    backgroundColor: Colors.dark.surface, borderRadius: 10,
+    borderWidth: 1, borderColor: Colors.dark.primary,
+  },
+  retryText: { color: Colors.dark.primary, fontSize: 14, fontFamily: "Inter_600SemiBold" },
   loadMoreBtn: {
     marginHorizontal: 16, marginVertical: 16, paddingVertical: 14,
     backgroundColor: Colors.dark.surface, borderRadius: 12,
