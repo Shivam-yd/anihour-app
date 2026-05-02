@@ -26,8 +26,10 @@ function extractCdata(xml: string, tag: string): string {
 }
 
 function extractImageUrl(itemXml: string, description: string): string | null {
-  const media = itemXml.match(/<media:(?:thumbnail|content)[^>]+url="([^"]+)"/i);
-  if (media) return media[1];
+  const mediaContent = itemXml.match(/<media:(?:thumbnail|content)>([^<]+)<\/media:(?:thumbnail|content)>/i);
+  if (mediaContent) return mediaContent[1].trim();
+  const mediaAttr = itemXml.match(/<media:(?:thumbnail|content)[^>]+url="([^"]+)"/i);
+  if (mediaAttr) return mediaAttr[1];
   const enclosure = itemXml.match(/<enclosure[^>]+url="([^"]+\.(jpg|jpeg|png|webp))"/i);
   if (enclosure) return enclosure[1];
   const imgInDesc = description.match(/<img[^>]+src="([^"]+)"/i);
