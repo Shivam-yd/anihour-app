@@ -101,6 +101,40 @@ export default function SeasonDetailScreen() {
                   <Text style={styles.pageSubtitle}>{year} • {allAnime.length}{hasNext ? "+" : ""} anime</Text>
                 </View>
               </View>
+
+              <View style={styles.seasonSwitcher}>
+                {(["winter", "spring", "summer", "fall"] as const).map((s) => {
+                  const isActive = s === season;
+                  const sm = SEASON_META[s];
+                  return (
+                    <TouchableOpacity
+                      key={s}
+                      style={[
+                        styles.seasonBtn,
+                        isActive && { backgroundColor: sm.color + "22", borderColor: sm.color },
+                      ]}
+                      activeOpacity={0.75}
+                      onPress={() => {
+                        if (!isActive) {
+                          router.replace({
+                            pathname: "/seasons/[year]/[season]",
+                            params: { year: year ?? "", season: s },
+                          });
+                        }
+                      }}
+                    >
+                      <Ionicons
+                        name={sm.icon as any}
+                        size={13}
+                        color={isActive ? sm.color : Colors.dark.textTertiary}
+                      />
+                      <Text style={[styles.seasonBtnText, isActive && { color: sm.color }]}>
+                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </LinearGradient>
 
             <View style={styles.sectionHeader}>
@@ -185,6 +219,17 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: "row", alignItems: "center" },
   pageTitle: { fontSize: 28, fontFamily: "Inter_700Bold" },
   pageSubtitle: { color: Colors.dark.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular", marginTop: 2 },
+  seasonSwitcher: {
+    flexDirection: "row", gap: 8, marginTop: 16, flexWrap: "wrap",
+  },
+  seasonBtn: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
+    backgroundColor: Colors.dark.surface, borderWidth: 1, borderColor: Colors.dark.border,
+  },
+  seasonBtnText: {
+    color: Colors.dark.textTertiary, fontSize: 13, fontFamily: "Inter_500Medium",
+  },
   sectionHeader: {
     flexDirection: "row", alignItems: "center", gap: 10,
     paddingHorizontal: 16, paddingVertical: 12,

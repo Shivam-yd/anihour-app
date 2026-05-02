@@ -136,6 +136,7 @@ export const GENRE_MAP: Record<string, { id: number; label: string }> = {
   mecha: { id: 18, label: "Mecha" },
   music: { id: 19, label: "Music" },
   magic: { id: 16, label: "Magic" },
+  "super-power": { id: 31, label: "Super Power" },
 };
 
 async function fetchWithRetry(url: string, retries = 2): Promise<unknown> {
@@ -363,15 +364,23 @@ export interface Character {
   role: string;
 }
 
+export interface Recommendation {
+  entry: Anime;
+  votes: number;
+}
+
 export async function fetchRecommendations(
   id: number,
   contentType: ContentType = "anime"
-): Promise<Anime[]> {
+): Promise<Recommendation[]> {
   try {
     const data = (await fetchWithRetry(
       `${BASE_URL}/${contentType}/${id}/recommendations`
-    )) as { data: Array<{ entry: Anime }> };
-    return (data.data ?? []).slice(0, 12).map((r) => r.entry);
+    )) as { data: Array<{ entry: Anime; votes: number }> };
+    return (data.data ?? []).slice(0, 12).map((r) => ({
+      entry: r.entry,
+      votes: r.votes ?? 0,
+    }));
   } catch {
     return [];
   }

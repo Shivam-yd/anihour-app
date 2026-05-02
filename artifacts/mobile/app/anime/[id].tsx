@@ -30,6 +30,7 @@ import {
   type Character,
   type Anime,
   type ContentType,
+  type Recommendation,
 } from "@/lib/jikan";
 
 const STREAMING_COLORS: Record<string, { bg: string; text: string }> = {
@@ -67,7 +68,7 @@ export default function AnimeDetailScreen() {
     enabled: !!id && !!anime,
   });
 
-  const { data: recommendations = [] } = useQuery<Anime[]>({
+  const { data: recommendations = [] } = useQuery<Recommendation[]>({
     queryKey: ["recommendations", id, contentType],
     queryFn: () => fetchRecommendations(Number(id), ct),
     enabled: !!id && !!anime,
@@ -87,9 +88,9 @@ export default function AnimeDetailScreen() {
     }
   }, [anime]);
 
-  const handleRecommendation = useCallback((rec: Anime) => {
+  const handleRecommendation = useCallback((rec: Recommendation) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push({ pathname: "/anime/[id]", params: { id: rec.mal_id.toString(), contentType } });
+    router.push({ pathname: "/anime/[id]", params: { id: rec.entry.mal_id.toString(), contentType } });
   }, [contentType]);
 
   const handleGenreTap = useCallback((genreId: number, genreName: string) => {
@@ -478,11 +479,12 @@ export default function AnimeDetailScreen() {
               contentContainerStyle={styles.hScroll}
             >
               {recommendations.map((rec) => {
-                const recImg = rec.images?.jpg?.large_image_url ?? rec.images?.jpg?.image_url;
-                const recTitle = rec.title_english ?? rec.title;
+                const { entry, votes } = rec;
+                const recImg = entry.images?.jpg?.large_image_url ?? entry.images?.jpg?.image_url;
+                const recTitle = entry.title_english ?? entry.title;
                 return (
                   <TouchableOpacity
-                    key={rec.mal_id}
+                    key={entry.mal_id}
                     style={styles.recCard}
                     onPress={() => handleRecommendation(rec)}
                     activeOpacity={0.85}
@@ -497,10 +499,16 @@ export default function AnimeDetailScreen() {
                       colors={["transparent", "rgba(26,26,46,0.92)"]}
                       style={styles.recGradient}
                     />
-                    {rec.score !== undefined && rec.score > 0 && (
+                    {entry.score !== undefined && entry.score > 0 && (
                       <View style={styles.recScore}>
                         <Ionicons name="star" size={9} color={Colors.dark.star} />
-                        <Text style={styles.recScoreText}>{rec.score.toFixed(1)}</Text>
+                        <Text style={styles.recScoreText}>{entry.score.toFixed(1)}</Text>
+                      </View>
+                    )}
+                    {votes > 0 && (
+                      <View style={styles.recVotes}>
+                        <Ionicons name="heart" size={8} color={Colors.dark.primary} />
+                        <Text style={styles.recVotesText}>{votes}</Text>
                       </View>
                     )}
                     <Text style={styles.recName} numberOfLines={2}>{recTitle}</Text>
@@ -702,6 +710,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(26,26,46,0.85)", borderRadius: 4, paddingHorizontal: 4, paddingVertical: 2,
   },
   recScoreText: { color: Colors.dark.star, fontSize: 9, fontFamily: "Inter_700Bold" },
+  recVotes: {
+    position: "absolute", top: 6, left: 6,
+    flexDirection: "row", alignItems: "center", gap: 2,
+    backgroundColor: "rgba(26,26,46,0.85)", borderRadius: 4, paddingHorizontal: 4, paddingVertical: 2,
+  },
+  recVotesText: { color: Colors.dark.primary, fontSize: 9, fontFamily: "Inter_700Bold" },
   recName: {
     position: "absolute", bottom: 6, left: 6, right: 6,
     color: Colors.dark.text, fontSize: 10, fontFamily: "Inter_500Medium", lineHeight: 14,
