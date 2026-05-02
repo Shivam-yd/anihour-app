@@ -28,8 +28,8 @@ const GENRE_COLORS = [
   "#8d6e63", "#78909c", "#5c6bc0", "#42a5f5",
 ];
 
-const GENRES = Object.entries(GENRE_MAP).map(([slug, { id, label }], i) => ({
-  id, slug, label,
+const GENRES = Object.entries(GENRE_MAP).map(([, { id, label }], i) => ({
+  id, label,
   color: GENRE_COLORS[i % GENRE_COLORS.length],
 }));
 

@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
   FlatList,
   Platform,
   Pressable,
@@ -17,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AnimeCard } from "@/components/AnimeCard";
 import Colors from "@/constants/colors";
 import { fetchSeasonArchiveHasNext, Anime } from "@/lib/jikan";
+import { chunkArray } from "@/lib/utils";
 
 const SEASON_META: Record<string, { color: string; icon: string }> = {
   winter: { color: "#4ecdc4", icon: "snow" },
@@ -24,12 +26,6 @@ const SEASON_META: Record<string, { color: string; icon: string }> = {
   summer: { color: "#f7971e", icon: "sunny" },
   fall: { color: "#e05c00", icon: "leaf" },
 };
-
-function chunkArray<T>(arr: T[], size: number): T[][] {
-  const result: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size));
-  return result;
-}
 
 export default function SeasonDetailScreen() {
   const { year, season } = useLocalSearchParams<{ year: string; season: string }>();
@@ -202,8 +198,7 @@ export default function SeasonDetailScreen() {
   );
 }
 
-const CARD_PLACEHOLDER_W =
-  (require("react-native").Dimensions.get("window").width - 48) / 2;
+const CARD_PLACEHOLDER_W = (Dimensions.get("window").width - 48) / 2;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.dark.background },

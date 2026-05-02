@@ -228,15 +228,6 @@ export async function fetchAnimeByGenre(
   return deduplicateById(filterSFW(data.data ?? []));
 }
 
-export async function fetchSeasonArchive(
-  year: number,
-  season: string
-): Promise<Anime[]> {
-  const url = `${BASE_URL}/seasons/${year}/${season}?limit=25&sfw=true`;
-  const data = (await fetchWithRetry(url)) as { data: Anime[] };
-  return deduplicateById(filterSFW(data.data ?? []));
-}
-
 function mapCategoryToBadge(category: string): string {
   const c = category.toLowerCase();
   if (c.includes("review")) return "REVIEW";
@@ -314,8 +305,6 @@ async function generateFallbackNews(): Promise<NewsItem[]> {
         });
       }
     }
-
-    await new Promise((r) => setTimeout(r, 400));
 
     if (recentRes.status === "fulfilled" && recentRes.value?.data) {
       for (const anime of recentRes.value.data.slice(0, 5)) {
@@ -427,12 +416,6 @@ export async function fetchStudioInfo(studioId: number): Promise<StudioInfo | nu
   }
 }
 
-export async function fetchStudioAnime(studioId: number, page = 1): Promise<Anime[]> {
-  const url = `${BASE_URL}/anime?producers=${studioId}&order_by=score&sort=desc&page=${page}&limit=24&sfw=true`;
-  const data = (await fetchWithRetry(url)) as { data: Anime[]; pagination?: { has_next_page: boolean } };
-  return deduplicateById(filterSFW(data.data ?? []));
-}
-
 export async function fetchStudioAnimeHasNext(studioId: number, page = 1): Promise<{ items: Anime[]; hasNext: boolean }> {
   const url = `${BASE_URL}/anime?producers=${studioId}&order_by=score&sort=desc&page=${page}&limit=24&sfw=true`;
   const data = (await fetchWithRetry(url)) as { data: Anime[]; pagination?: { has_next_page: boolean } };
@@ -479,7 +462,8 @@ export async function searchContent(
   const typeParam = type ? `&type=${type}` : "";
   const url = `${BASE_URL}/${contentType}?q=${encodeURIComponent(query)}&page=${page}&limit=20&${sfwParam}${adultGenre}${statusParam}${typeParam}`;
   const data = (await fetchWithRetry(url)) as { data: Anime[] };
-  return data.data ?? [];
+  const items = deduplicateById(data.data ?? []);
+  return isAdult ? items : filterSFW(items);
 }
 
 export { searchContent as searchAnime };

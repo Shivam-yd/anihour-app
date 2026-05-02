@@ -20,14 +20,9 @@ import { AnimeCard, AnimeCardWide } from "@/components/AnimeCard";
 import { SkeletonCard } from "@/components/SkeletonCard";
 import Colors from "@/constants/colors";
 import { fetchAnimeByGenre, type ContentType, type Anime } from "@/lib/jikan";
+import { chunkArray } from "@/lib/utils";
 
 const PAGE_SIZE = 25;
-
-function chunkArray<T>(arr: T[], size: number): T[][] {
-  const result: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size));
-  return result;
-}
 
 export default function GenreScreen() {
   const { id, name, contentType } = useLocalSearchParams<{

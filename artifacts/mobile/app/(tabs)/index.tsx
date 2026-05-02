@@ -24,6 +24,7 @@ import { SkeletonCard } from "@/components/SkeletonCard";
 import Colors from "@/constants/colors";
 import { useContentSettings } from "@/lib/content-settings";
 import { fetchSeasonNow, Anime } from "@/lib/jikan";
+import { chunkArray } from "@/lib/utils";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 type ViewMode = "grid" | "list";
@@ -34,12 +35,6 @@ function getCurrentSeason(): string {
   if (month < 6) return "Spring";
   if (month < 9) return "Summer";
   return "Fall";
-}
-
-function chunkArray<T>(arr: T[], size: number): T[][] {
-  const result: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size));
-  return result;
 }
 
 function FeaturedHero({ anime, onPress }: { anime: Anime; onPress: () => void }) {

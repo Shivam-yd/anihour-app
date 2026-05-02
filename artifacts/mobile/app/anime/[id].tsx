@@ -22,6 +22,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 
 import Colors from "@/constants/colors";
+import { isSafeUrl } from "@/lib/utils";
 import {
   fetchAnimeById,
   fetchMangaById,
@@ -429,7 +430,7 @@ export default function AnimeDetailScreen() {
                   <TouchableOpacity
                     key={s.name}
                     style={[styles.streamBadge, { backgroundColor: colors.bg }]}
-                    onPress={() => Linking.openURL(s.url)}
+                    onPress={() => isSafeUrl(s.url) && Linking.openURL(s.url)}
                     activeOpacity={0.8}
                   >
                     <Ionicons name="play-circle" size={12} color={colors.text} />

@@ -5,6 +5,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
   FlatList,
   Platform,
   Pressable,
@@ -17,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Colors from "@/constants/colors";
 import { fetchStudioAnimeHasNext, fetchStudioInfo, StudioInfo, Anime } from "@/lib/jikan";
+import { chunkArray } from "@/lib/utils";
 
 const CARD_COLS = 3;
 
@@ -45,12 +47,6 @@ const StudioAnimeCard = React.memo(function StudioAnimeCard({ anime }: { anime: 
     </Pressable>
   );
 });
-
-function chunkArray<T>(arr: T[], size: number): T[][] {
-  const result: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size));
-  return result;
-}
 
 export default function StudioScreen() {
   const { id, name } = useLocalSearchParams<{ id: string; name: string }>();
@@ -225,7 +221,7 @@ export default function StudioScreen() {
   );
 }
 
-const CARD_W = (require("react-native").Dimensions.get("window").width - 48) / CARD_COLS;
+const CARD_W = (Dimensions.get("window").width - 48) / CARD_COLS;
 const CARD_H = CARD_W * 1.55;
 
 const styles = StyleSheet.create({
