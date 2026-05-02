@@ -1,6 +1,7 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useCallback, useEffect, useState } from "react";
+import { useScrollToTop } from "@react-navigation/native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -19,17 +20,14 @@ import { SkeletonCard } from "@/components/SkeletonCard";
 import Colors from "@/constants/colors";
 import { useContentSettings } from "@/lib/content-settings";
 import { fetchUpcoming, Anime } from "@/lib/jikan";
-
-function chunkArray<T>(arr: T[], size: number): T[][] {
-  const result: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size));
-  return result;
-}
+import { chunkArray } from "@/lib/utils";
 
 export default function UpcomingScreen() {
   const insets = useSafeAreaInsets();
   const { contentType, isAdultMode } = useContentSettings();
   const isManga = contentType === "manga";
+  const flatListRef = useRef<FlatList>(null);
+  useScrollToTop(flatListRef);
 
   const [allAnime, setAllAnime] = useState<Anime[]>([]);
   const [page, setPage] = useState(1);
@@ -84,10 +82,7 @@ export default function UpcomingScreen() {
     <View>
       <LinearGradient colors={["rgba(69,183,209,0.15)", "transparent"]} style={styles.headerGradient}>
         <View style={[styles.headerContent, { paddingTop: Platform.OS === "web" ? insets.top + 67 : insets.top + 12 }]}>
-          <View>
-            <Text style={styles.brandText}>ANIHOUR</Text>
-            <Text style={styles.headerTitle}>Upcoming {isManga ? "Manga" : "Anime"}</Text>
-          </View>
+          <Text style={styles.headerTitle}>Upcoming {isManga ? "Manga" : "Anime"}</Text>
           <View style={styles.iconBox}>
             <Feather name="calendar" size={22} color={Colors.dark.accent} />
           </View>
@@ -142,6 +137,7 @@ export default function UpcomingScreen() {
   return (
     <View style={styles.container}>
       <FlatList
+        ref={flatListRef}
         data={loading ? [] : rows}
         keyExtractor={(_, i) => `row-${i}`}
         ListHeaderComponent={renderHeader}
@@ -176,7 +172,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingBottom: 12,
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
   },
-  brandText: { color: Colors.dark.accent, fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 3, marginBottom: 2 },
   headerTitle: { color: Colors.dark.text, fontSize: 26, fontFamily: "Inter_700Bold" },
   iconBox: {
     width: 44, height: 44, borderRadius: 12, backgroundColor: Colors.dark.accentLight,

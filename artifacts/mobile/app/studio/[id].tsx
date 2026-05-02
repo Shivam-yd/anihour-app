@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { ShimmerBox } from "@/components/SkeletonCard";
 import Colors from "@/constants/colors";
 import { fetchStudioAnimeHasNext, fetchStudioInfo, StudioInfo, Anime } from "@/lib/jikan";
 import { chunkArray } from "@/lib/utils";
@@ -159,9 +160,10 @@ export default function StudioScreen() {
             </View>
 
             {loading && (
-              <View style={styles.centered}>
-                <ActivityIndicator size="large" color={Colors.dark.secondary} />
-                <Text style={styles.loadingText}>Loading...</Text>
+              <View style={styles.skeletonGrid}>
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <ShimmerBox key={i} width={CARD_W} height={CARD_H} borderRadius={10} />
+                ))}
               </View>
             )}
 
@@ -293,8 +295,8 @@ const styles = StyleSheet.create({
     position: "absolute", bottom: 0, left: 0, right: 0,
     padding: 6, color: Colors.dark.text, fontSize: 10, fontFamily: "Inter_600SemiBold", lineHeight: 14,
   },
+  skeletonGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 16, paddingBottom: 8 },
   centered: { alignItems: "center", justifyContent: "center", paddingVertical: 60, gap: 12 },
-  loadingText: { color: Colors.dark.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular" },
   errorText: { color: Colors.dark.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center" },
   retryBtn: {
     paddingHorizontal: 20, paddingVertical: 10,
