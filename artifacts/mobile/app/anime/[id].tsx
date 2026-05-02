@@ -287,6 +287,68 @@ export default function AnimeDetailScreen() {
           </View>
         ) : null}
 
+        {/* Official Trailer */}
+        {!isManga && (() => {
+          const ytId = anime.trailer?.youtube_id;
+          const thumbUrl = ytId
+            ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`
+            : null;
+          const ytUrl = ytId
+            ? `https://www.youtube.com/watch?v=${ytId}`
+            : `https://www.youtube.com/results?search_query=${encodeURIComponent((anime.title_english ?? anime.title) + " anime trailer")}`;
+          return (
+            <View style={styles.section}>
+              <View style={styles.trailerHeader}>
+                <Ionicons name="film-outline" size={16} color={Colors.dark.accent} />
+                <Text style={styles.sectionLabel}>Official Trailer</Text>
+              </View>
+              {thumbUrl ? (
+                <TouchableOpacity
+                  style={styles.trailerThumb}
+                  activeOpacity={0.88}
+                  onPress={() =>
+                    WebBrowser.openBrowserAsync(ytUrl, {
+                      presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
+                      toolbarColor: "#0f0f0f",
+                    })
+                  }
+                >
+                  <Image
+                    source={{ uri: thumbUrl }}
+                    style={styles.trailerImage}
+                    contentFit="cover"
+                    transition={300}
+                  />
+                  <LinearGradient
+                    colors={["transparent", "rgba(0,0,0,0.55)"]}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <View style={styles.trailerPlayBtn}>
+                    <Ionicons name="logo-youtube" size={40} color="#ff0000" />
+                  </View>
+                  <View style={styles.trailerLabel}>
+                    <Text style={styles.trailerLabelText}>Watch on YouTube</Text>
+                  </View>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={styles.trailerUnavailable}
+                  activeOpacity={0.85}
+                  onPress={() => Linking.openURL(ytUrl)}
+                >
+                  <Ionicons name="videocam-off-outline" size={28} color={Colors.dark.textTertiary} />
+                  <Text style={styles.trailerUnavailableTitle}>No trailer on file</Text>
+                  <Text style={styles.trailerUnavailableSub}>Tap to search on YouTube</Text>
+                  <View style={styles.trailerSearchBtn}>
+                    <Ionicons name="logo-youtube" size={14} color="#ff0000" />
+                    <Text style={styles.trailerSearchBtnText}>Search YouTube</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+            </View>
+          );
+        })()}
+
         {/* Characters */}
         {characters.length > 0 && (
           <View style={styles.section}>
@@ -548,6 +610,44 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
   },
   streamBadgeText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  trailerHeader: { flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 10 },
+  trailerThumb: {
+    width: "100%", height: 200, borderRadius: 14,
+    overflow: "hidden", backgroundColor: "#0f0f0f",
+    borderWidth: 1, borderColor: Colors.dark.border,
+    alignItems: "center", justifyContent: "center",
+  },
+  trailerImage: { width: "100%", height: "100%" },
+  trailerPlayBtn: {
+    position: "absolute",
+    width: 68, height: 68, borderRadius: 34,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 2, borderColor: "rgba(255,255,255,0.25)",
+  },
+  trailerLabel: {
+    position: "absolute", bottom: 10, left: 0, right: 0, alignItems: "center",
+  },
+  trailerLabelText: {
+    color: "rgba(255,255,255,0.9)", fontSize: 12, fontFamily: "Inter_500Medium",
+    backgroundColor: "rgba(0,0,0,0.5)", paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: 20,
+  },
+  trailerUnavailable: {
+    width: "100%", paddingVertical: 28, borderRadius: 14,
+    backgroundColor: Colors.dark.surface,
+    borderWidth: 1, borderColor: Colors.dark.border,
+    alignItems: "center", gap: 6,
+  },
+  trailerUnavailableTitle: { color: Colors.dark.text, fontSize: 14, fontFamily: "Inter_600SemiBold", marginTop: 4 },
+  trailerUnavailableSub: { color: Colors.dark.textSecondary, fontSize: 12, fontFamily: "Inter_400Regular" },
+  trailerSearchBtn: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    marginTop: 8, paddingHorizontal: 14, paddingVertical: 8,
+    backgroundColor: "rgba(255,0,0,0.1)", borderRadius: 20,
+    borderWidth: 1, borderColor: "rgba(255,0,0,0.3)",
+  },
+  trailerSearchBtnText: { color: "#ff4444", fontSize: 13, fontFamily: "Inter_600SemiBold" },
   malButton: {
     flexDirection: "row", alignItems: "center", justifyContent: "center",
     gap: 8, marginHorizontal: 16, marginTop: 24, paddingVertical: 14,
