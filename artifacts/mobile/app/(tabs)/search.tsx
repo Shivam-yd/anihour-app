@@ -133,7 +133,6 @@ export default function SearchScreen() {
       <View style={[styles.header, { paddingTop: topPad }]}>
         <View style={styles.titleRow}>
           <View>
-            <Text style={styles.brandText}>ANIHOUR</Text>
             <Text style={styles.headerTitle}>Search {isManga ? "Manga" : "Anime"}</Text>
           </View>
           <View style={styles.searchIcon}>
@@ -301,7 +300,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.dark.background },
   header: { paddingHorizontal: 16, paddingBottom: 4, backgroundColor: Colors.dark.background },
   titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
-  brandText: { color: Colors.dark.primary, fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 3, marginBottom: 2 },
   headerTitle: { color: Colors.dark.text, fontSize: 26, fontFamily: "Inter_700Bold" },
   searchIcon: {
     width: 44, height: 44, borderRadius: 12,

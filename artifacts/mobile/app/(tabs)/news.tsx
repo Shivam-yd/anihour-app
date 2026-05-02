@@ -33,7 +33,6 @@ export default function NewsScreen() {
     >
       <View style={[styles.headerContent, { paddingTop: Platform.OS === "web" ? insets.top + 67 : insets.top + 12 }]}>
         <View>
-          <Text style={styles.brandText}>ANIHOUR</Text>
           <Text style={styles.headerTitle}>Anime News</Text>
         </View>
         <View style={styles.rssBox}>
@@ -106,13 +105,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-  },
-  brandText: {
-    color: Colors.dark.warning,
-    fontSize: 11,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 3,
-    marginBottom: 2,
   },
   headerTitle: {
     color: Colors.dark.text,

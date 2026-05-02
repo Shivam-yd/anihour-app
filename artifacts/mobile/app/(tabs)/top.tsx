@@ -135,7 +135,6 @@ export default function TopScreen() {
       <LinearGradient colors={["rgba(78,205,196,0.15)", "transparent"]} style={styles.headerGradient}>
         <View style={[styles.headerContent, { paddingTop: Platform.OS === "web" ? insets.top + 67 : insets.top + 12 }]}>
           <View>
-            <Text style={styles.brandText}>ANIHOUR</Text>
             <Text style={styles.headerTitle}>Top {isManga ? "Manga" : "Anime"}</Text>
           </View>
           <View style={styles.trophyBox}>
@@ -252,7 +251,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingBottom: 12,
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
   },
-  brandText: { color: Colors.dark.secondary, fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 3, marginBottom: 2 },
   headerTitle: { color: Colors.dark.text, fontSize: 26, fontFamily: "Inter_700Bold" },
   trophyBox: {
     width: 44, height: 44, borderRadius: 12, backgroundColor: Colors.dark.secondaryLight,

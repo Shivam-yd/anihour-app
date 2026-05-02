@@ -139,19 +139,26 @@ export const GENRE_MAP: Record<string, { id: number; label: string }> = {
   "super-power": { id: 31, label: "Super Power" },
 };
 
-async function fetchWithRetry(url: string, retries = 2): Promise<unknown> {
+async function fetchWithRetry(url: string, retries = 3): Promise<unknown> {
   for (let i = 0; i <= retries; i++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
     try {
-      const res = await fetch(url, { headers: { Accept: "application/json" } });
+      const res = await fetch(url, {
+        headers: { Accept: "application/json" },
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
       if (res.status === 429) {
-        await new Promise((r) => setTimeout(r, 1200 * (i + 1)));
+        await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
         continue;
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch (e) {
+      clearTimeout(timer);
       if (i === retries) throw e;
-      await new Promise((r) => setTimeout(r, 600 * (i + 1)));
+      await new Promise((r) => setTimeout(r, 800 * (i + 1)));
     }
   }
 }

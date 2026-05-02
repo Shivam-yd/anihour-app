@@ -196,7 +196,10 @@ export default function SeasonScreen() {
       >
         <View style={[styles.headerContent, { paddingTop: Platform.OS === "web" ? insets.top + 67 : insets.top + 12 }]}>
           <View>
-            <Text style={styles.brandText}>ANIHOUR</Text>
+            <View style={styles.brandRow}>
+              <Text style={styles.brandA}>Ani</Text>
+              <Text style={styles.brandB}>Hour</Text>
+            </View>
             <Text style={styles.headerTitle}>{headerTitle}</Text>
           </View>
           <TouchableOpacity
@@ -328,7 +331,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  brandText: { color: Colors.dark.primary, fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 3, marginBottom: 2 },
+  brandRow: { flexDirection: "row", alignItems: "baseline", marginBottom: 2 },
+  brandA: { color: Colors.dark.primary, fontSize: 15, fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
+  brandB: { color: Colors.dark.text, fontSize: 15, fontFamily: "Inter_400Regular", letterSpacing: 0.5 },
   headerTitle: { color: Colors.dark.text, fontSize: 26, fontFamily: "Inter_700Bold" },
   viewToggle: {
     width: 40, height: 40, backgroundColor: Colors.dark.primaryLight,
