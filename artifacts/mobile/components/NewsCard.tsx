@@ -83,7 +83,7 @@ export function NewsCard({ article }: Props) {
         <Text style={styles.title} numberOfLines={3}>{article.title}</Text>
 
         {article.excerpt ? (
-          <Text style={styles.excerpt} numberOfLines={2}>{article.excerpt}</Text>
+          <Text style={styles.excerpt} numberOfLines={1}>{article.excerpt}</Text>
         ) : null}
 
         <View style={styles.footer}>

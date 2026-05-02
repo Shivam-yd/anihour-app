@@ -78,15 +78,8 @@ export const AnimeCard = React.memo(function AnimeCard({ anime, rank }: Props) {
 
       <View style={styles.info}>
         <Text style={styles.title} numberOfLines={2}>{title}</Text>
-        {anime.type && (
-          <View style={styles.typeRow}>
-            <View style={styles.typePill}>
-              <Text style={styles.typeText}>{anime.type}</Text>
-            </View>
-            {count !== undefined && count > 0 && (
-              <Text style={styles.episodes}>{count} {countLabel}</Text>
-            )}
-          </View>
+        {count !== undefined && count > 0 && (
+          <Text style={styles.episodes}>{count} {countLabel}</Text>
         )}
       </View>
     </AnimatedPressable>
@@ -164,9 +157,6 @@ export const AnimeCardWide = React.memo(function AnimeCardWide({ anime, index }:
               <Text style={styles.wideEpisodes}>{anime.episodes} eps</Text>
             )
           )}
-          {anime.status && (
-            <Text style={styles.wideStatus} numberOfLines={1}>{anime.status}</Text>
-          )}
         </View>
 
         {anime.genres && anime.genres.length > 0 && (
@@ -225,16 +215,6 @@ const styles = StyleSheet.create({
   scoreText: { color: Colors.dark.star, fontSize: 11, fontFamily: "Inter_700Bold" },
   info: { position: "absolute", bottom: 0, left: 0, right: 0, padding: 10 },
   title: { color: Colors.dark.text, fontSize: 12, fontFamily: "Inter_600SemiBold", lineHeight: 17, marginBottom: 4 },
-  typeRow: { flexDirection: "row", alignItems: "center", gap: 5 },
-  typePill: {
-    backgroundColor: Colors.dark.primaryLight,
-    borderRadius: 4,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderWidth: 1,
-    borderColor: Colors.dark.primary,
-  },
-  typeText: { color: Colors.dark.primary, fontSize: 9, fontFamily: "Inter_600SemiBold" },
   episodes: { color: Colors.dark.textSecondary, fontSize: 10, fontFamily: "Inter_400Regular" },
 
   wideCard: {
@@ -270,6 +250,5 @@ const styles = StyleSheet.create({
   },
   wideMeta: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 },
   wideEpisodes: { color: Colors.dark.textSecondary, fontSize: 12, fontFamily: "Inter_400Regular" },
-  wideStatus: { color: Colors.dark.textTertiary, fontSize: 11, fontFamily: "Inter_400Regular", flexShrink: 1 },
   genres: { color: Colors.dark.secondary, fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2, opacity: 0.9 },
 });
