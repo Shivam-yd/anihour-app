@@ -45,6 +45,8 @@ const MANGA_SUGGESTIONS = [
   "Chainsaw Man", "Bleach", "Naruto", "Demon Slayer",
 ];
 
+const PAGE_SIZE = 20;
+
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
@@ -52,6 +54,10 @@ export default function SearchScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const currentQueryRef = useRef("");
   const inputRef = useRef<TextInput>(null);
   const { contentType, isAdultMode } = useContentSettings();
   const isManga = contentType === "manga";
@@ -62,31 +68,54 @@ export default function SearchScreen() {
     setHasSearched(false);
     setError(false);
     setQuery("");
+    setPage(1);
+    setHasMore(false);
   }, [contentType, isAdultMode]);
 
-  const handleSearch = useCallback(async (q: string) => {
+  const handleSearch = useCallback(async (q: string, p = 1) => {
     const trimmed = q.trim();
     if (!trimmed || trimmed.length < 2) return;
-    Keyboard.dismiss();
-    setIsLoading(true);
-    setError(false);
-    setHasSearched(true);
+    if (p === 1) {
+      Keyboard.dismiss();
+      setIsLoading(true);
+      setError(false);
+      setHasSearched(true);
+      currentQueryRef.current = trimmed;
+      setPage(1);
+    } else {
+      setLoadingMore(true);
+    }
     try {
-      const data = await searchAnime(trimmed, 1, contentType, isAdultMode);
-      setResults(data);
+      const data = await searchAnime(trimmed, p, contentType, isAdultMode);
+      if (p === 1) {
+        setResults(data);
+      } else {
+        setResults(prev => [...prev, ...data]);
+      }
+      setHasMore(data.length >= PAGE_SIZE);
+      setPage(p);
     } catch {
-      setError(true);
-      setResults([]);
+      if (p === 1) {
+        setError(true);
+        setResults([]);
+      }
     } finally {
       setIsLoading(false);
+      setLoadingMore(false);
     }
   }, [contentType, isAdultMode]);
+
+  const handleLoadMore = useCallback(() => {
+    handleSearch(currentQueryRef.current, page + 1);
+  }, [page, handleSearch]);
 
   const handleClear = useCallback(() => {
     setQuery("");
     setResults([]);
     setHasSearched(false);
     setError(false);
+    setPage(1);
+    setHasMore(false);
     inputRef.current?.focus();
   }, []);
 
@@ -242,9 +271,9 @@ export default function SearchScreen() {
         <>
           <View style={styles.resultsRow}>
             <View style={styles.resultsBadge}>
-              <Text style={styles.resultsBadgeText}>{results.length}</Text>
+              <Text style={styles.resultsBadgeText}>{results.length}{hasMore ? "+" : ""}</Text>
             </View>
-            <Text style={styles.resultsText}>results for "{query}"</Text>
+            <Text style={styles.resultsText}>results for "{currentQueryRef.current}"</Text>
           </View>
           <FlatList
             data={results}
@@ -257,6 +286,22 @@ export default function SearchScreen() {
             maxToRenderPerBatch={6}
             initialNumToRender={8}
             removeClippedSubviews={Platform.OS !== "web"}
+            ListFooterComponent={
+              hasMore ? (
+                <TouchableOpacity
+                  style={styles.loadMoreBtn}
+                  onPress={handleLoadMore}
+                  disabled={loadingMore}
+                  activeOpacity={0.8}
+                >
+                  {loadingMore ? (
+                    <ActivityIndicator size="small" color={Colors.dark.primary} />
+                  ) : (
+                    <Text style={styles.loadMoreText}>Load More</Text>
+                  )}
+                </TouchableOpacity>
+              ) : null
+            }
           />
         </>
       )}
@@ -407,6 +452,23 @@ const styles = StyleSheet.create({
     color: Colors.dark.textSecondary,
     fontSize: 13,
     fontFamily: "Inter_400Regular",
+  },
+
+  loadMoreBtn: {
+    marginHorizontal: 16,
+    marginVertical: 16,
+    paddingVertical: 14,
+    backgroundColor: Colors.dark.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.dark.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadMoreText: {
+    color: Colors.dark.primary,
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
   },
 
   genreSectionHeader: {
