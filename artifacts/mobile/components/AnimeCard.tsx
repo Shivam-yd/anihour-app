@@ -246,6 +246,15 @@ const styles = StyleSheet.create({
   rankCircleText: { color: Colors.dark.primary, fontSize: 11, fontFamily: "Inter_700Bold" },
   scoreRow: { flexDirection: "row", alignItems: "center", gap: 3 },
   scoreTextWide: { color: Colors.dark.star, fontSize: 13, fontFamily: "Inter_700Bold" },
+  typePill: {
+    backgroundColor: Colors.dark.surface,
+    borderRadius: 5,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  typeText: { color: Colors.dark.textSecondary, fontSize: 10, fontFamily: "Inter_500Medium" },
   typePillWide: { marginLeft: "auto" },
   wideTitle: {
     color: Colors.dark.text, fontSize: 15, fontFamily: "Inter_600SemiBold",
