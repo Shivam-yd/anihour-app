@@ -8,6 +8,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import { Image } from "expo-image";
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -84,14 +85,18 @@ function AniHourSplash() {
       <View style={styles.splashGlow2} />
 
       <View style={styles.splashCenter}>
-        <Animated.Text
+        <Animated.View
           style={[
-            styles.splashEmoji,
+            styles.splashLogo,
             { opacity: logoOpacity, transform: [{ scale: logoScale }] },
           ]}
         >
-          🎌
-        </Animated.Text>
+          <Image
+            source={require("../assets/images/icon.png")}
+            style={styles.splashLogoImg}
+            contentFit="contain"
+          />
+        </Animated.View>
 
         <Animated.View style={{ opacity: textOpacity, alignItems: "center" }}>
           <Text style={styles.splashTitle}>
@@ -188,9 +193,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 1,
   },
-  splashEmoji: {
-    fontSize: 80,
-    marginBottom: 8,
+  splashLogo: {
+    width: 110,
+    height: 110,
+    marginBottom: 12,
+  },
+  splashLogoImg: {
+    width: 110,
+    height: 110,
+    borderRadius: 24,
   },
   splashTitle: {
     fontSize: 44,
