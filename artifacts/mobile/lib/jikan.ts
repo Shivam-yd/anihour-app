@@ -469,11 +469,15 @@ export async function searchContent(
   query: string,
   page = 1,
   contentType: ContentType = "anime",
-  isAdult = false
+  isAdult = false,
+  status?: string,
+  type?: string
 ): Promise<Anime[]> {
   const sfwParam = isAdult ? "sfw=false" : "sfw=true";
   const adultGenre = isAdult ? "&genres=12" : "";
-  const url = `${BASE_URL}/${contentType}?q=${encodeURIComponent(query)}&page=${page}&limit=20&${sfwParam}${adultGenre}`;
+  const statusParam = status ? `&status=${status}` : "";
+  const typeParam = type ? `&type=${type}` : "";
+  const url = `${BASE_URL}/${contentType}?q=${encodeURIComponent(query)}&page=${page}&limit=20&${sfwParam}${adultGenre}${statusParam}${typeParam}`;
   const data = (await fetchWithRetry(url)) as { data: Anime[] };
   return data.data ?? [];
 }

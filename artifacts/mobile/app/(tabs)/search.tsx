@@ -47,6 +47,32 @@ const MANGA_SUGGESTIONS = [
 
 const PAGE_SIZE = 20;
 
+const ANIME_STATUS_FILTERS = [
+  { key: "airing", label: "Ongoing" },
+  { key: "complete", label: "Completed" },
+  { key: "upcoming", label: "Upcoming" },
+];
+
+const MANGA_STATUS_FILTERS = [
+  { key: "publishing", label: "Publishing" },
+  { key: "complete", label: "Completed" },
+  { key: "hiatus", label: "Hiatus" },
+];
+
+const ANIME_TYPE_FILTERS = [
+  { key: "tv", label: "TV Series" },
+  { key: "movie", label: "Movie" },
+  { key: "ova", label: "OVA" },
+  { key: "special", label: "Special" },
+];
+
+const MANGA_TYPE_FILTERS = [
+  { key: "manga", label: "Manga" },
+  { key: "manhwa", label: "Manhwa" },
+  { key: "novel", label: "Light Novel" },
+  { key: "oneshot", label: "One-Shot" },
+];
+
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
@@ -63,6 +89,15 @@ export default function SearchScreen() {
   const isManga = contentType === "manga";
   const suggestions = isManga ? MANGA_SUGGESTIONS : SUGGESTIONS;
 
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<string | undefined>(undefined);
+  const [selectedType, setSelectedType] = useState<string | undefined>(undefined);
+
+  const statusFilters = isManga ? MANGA_STATUS_FILTERS : ANIME_STATUS_FILTERS;
+  const typeFilters = isManga ? MANGA_TYPE_FILTERS : ANIME_TYPE_FILTERS;
+
+  const activeFilterCount = (selectedStatus ? 1 : 0) + (selectedType ? 1 : 0);
+
   useEffect(() => {
     setResults([]);
     setHasSearched(false);
@@ -70,9 +105,17 @@ export default function SearchScreen() {
     setQuery("");
     setPage(1);
     setHasMore(false);
+    setSelectedStatus(undefined);
+    setSelectedType(undefined);
+    setShowFilters(false);
   }, [contentType, isAdultMode]);
 
-  const handleSearch = useCallback(async (q: string, p = 1) => {
+  const handleSearch = useCallback(async (
+    q: string,
+    p = 1,
+    status = selectedStatus,
+    type = selectedType
+  ) => {
     const trimmed = q.trim();
     if (!trimmed || trimmed.length < 2) return;
     if (p === 1) {
@@ -86,7 +129,7 @@ export default function SearchScreen() {
       setLoadingMore(true);
     }
     try {
-      const data = await searchAnime(trimmed, p, contentType, isAdultMode);
+      const data = await searchAnime(trimmed, p, contentType, isAdultMode, status, type);
       if (p === 1) {
         setResults(data);
       } else {
@@ -103,11 +146,11 @@ export default function SearchScreen() {
       setIsLoading(false);
       setLoadingMore(false);
     }
-  }, [contentType, isAdultMode]);
+  }, [contentType, isAdultMode, selectedStatus, selectedType]);
 
   const handleLoadMore = useCallback(() => {
-    handleSearch(currentQueryRef.current, page + 1);
-  }, [page, handleSearch]);
+    handleSearch(currentQueryRef.current, page + 1, selectedStatus, selectedType);
+  }, [page, handleSearch, selectedStatus, selectedType]);
 
   const handleClear = useCallback(() => {
     setQuery("");
@@ -121,20 +164,35 @@ export default function SearchScreen() {
 
   const handleSuggestion = useCallback((s: string) => {
     setQuery(s);
-    handleSearch(s);
-  }, [handleSearch]);
+    handleSearch(s, 1, selectedStatus, selectedType);
+  }, [handleSearch, selectedStatus, selectedType]);
 
   const handleGenre = useCallback((genreId: number, genreName: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({ pathname: "/genre/[id]", params: { id: genreId.toString(), name: genreName, contentType } });
   }, [contentType]);
 
+  const handleApplyFilters = useCallback(() => {
+    setShowFilters(false);
+    if (currentQueryRef.current) {
+      handleSearch(currentQueryRef.current, 1, selectedStatus, selectedType);
+    }
+  }, [handleSearch, selectedStatus, selectedType]);
+
+  const handleClearFilters = useCallback(() => {
+    setSelectedStatus(undefined);
+    setSelectedType(undefined);
+    if (currentQueryRef.current) {
+      handleSearch(currentQueryRef.current, 1, undefined, undefined);
+    }
+  }, [handleSearch]);
+
   const topPad = Platform.OS === "web" ? insets.top + 67 : insets.top + 12;
 
   return (
     <View style={styles.container}>
 
-      {/* ── Fixed header (never inside FlatList, never remounts) ── */}
+      {/* ── Fixed header ── */}
       <View style={[styles.header, { paddingTop: topPad }]}>
         <View style={styles.titleRow}>
           <View>
@@ -148,7 +206,7 @@ export default function SearchScreen() {
 
         <ContentToggleBar />
 
-        {/* Search input row — always mounted, never in a list header */}
+        {/* Search input row */}
         <View style={styles.inputRow}>
           <View style={styles.inputWrap}>
             <Feather name="search" size={16} color={Colors.dark.primary} style={styles.inputIcon} />
@@ -171,6 +229,21 @@ export default function SearchScreen() {
               </TouchableOpacity>
             )}
           </View>
+
+          {/* Filter toggle button */}
+          <TouchableOpacity
+            style={[styles.filterBtn, showFilters && styles.filterBtnActive, activeFilterCount > 0 && styles.filterBtnBadged]}
+            onPress={() => setShowFilters(v => !v)}
+            activeOpacity={0.8}
+          >
+            <Feather name="sliders" size={17} color={activeFilterCount > 0 ? Colors.dark.secondary : showFilters ? Colors.dark.primary : Colors.dark.textSecondary} />
+            {activeFilterCount > 0 && (
+              <View style={styles.filterBadge}>
+                <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.searchBtn}
             onPress={() => handleSearch(query)}
@@ -179,11 +252,86 @@ export default function SearchScreen() {
             <Feather name="arrow-right" size={18} color="#fff" />
           </TouchableOpacity>
         </View>
+
+        {/* Collapsible filter panel */}
+        {showFilters && (
+          <View style={styles.filterPanel}>
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>Status</Text>
+              <View style={styles.filterChipRow}>
+                {statusFilters.map((f) => (
+                  <TouchableOpacity
+                    key={f.key}
+                    style={[styles.filterChip, selectedStatus === f.key && styles.filterChipActive]}
+                    onPress={() => setSelectedStatus(prev => prev === f.key ? undefined : f.key)}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={[styles.filterChipText, selectedStatus === f.key && styles.filterChipTextActive]}>
+                      {f.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>Type</Text>
+              <View style={styles.filterChipRow}>
+                {typeFilters.map((f) => (
+                  <TouchableOpacity
+                    key={f.key}
+                    style={[styles.filterChip, selectedType === f.key && styles.filterChipActive]}
+                    onPress={() => setSelectedType(prev => prev === f.key ? undefined : f.key)}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={[styles.filterChipText, selectedType === f.key && styles.filterChipTextActive]}>
+                      {f.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.filterActions}>
+              <TouchableOpacity style={styles.filterClearBtn} onPress={handleClearFilters} activeOpacity={0.8}>
+                <Text style={styles.filterClearText}>Clear All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.filterApplyBtn} onPress={handleApplyFilters} activeOpacity={0.8}>
+                <Text style={styles.filterApplyText}>Apply</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Active filter tags */}
+        {!showFilters && activeFilterCount > 0 && (
+          <View style={styles.activeFiltersRow}>
+            {selectedStatus && (
+              <View style={styles.activeFilterTag}>
+                <Text style={styles.activeFilterTagText}>
+                  {statusFilters.find(f => f.key === selectedStatus)?.label}
+                </Text>
+                <TouchableOpacity onPress={() => { setSelectedStatus(undefined); if (currentQueryRef.current) handleSearch(currentQueryRef.current, 1, undefined, selectedType); }} hitSlop={6}>
+                  <Feather name="x" size={10} color={Colors.dark.secondary} />
+                </TouchableOpacity>
+              </View>
+            )}
+            {selectedType && (
+              <View style={styles.activeFilterTag}>
+                <Text style={styles.activeFilterTagText}>
+                  {typeFilters.find(f => f.key === selectedType)?.label}
+                </Text>
+                <TouchableOpacity onPress={() => { setSelectedType(undefined); if (currentQueryRef.current) handleSearch(currentQueryRef.current, 1, selectedStatus, undefined); }} hitSlop={6}>
+                  <Feather name="x" size={10} color={Colors.dark.secondary} />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
       </View>
 
       {/* ── Content area ── */}
       {!hasSearched ? (
-        /* Suggestion chips + genre discovery when no search has been made */
         <ScrollView
           style={styles.suggestionsScroll}
           contentContainerStyle={styles.suggestionsContent}
@@ -264,10 +412,9 @@ export default function SearchScreen() {
         <View style={styles.stateBox}>
           <Feather name="search" size={48} color={Colors.dark.textTertiary} />
           <Text style={styles.stateTitle}>No results</Text>
-          <Text style={styles.stateText}>Try a different search term</Text>
+          <Text style={styles.stateText}>Try a different search term or adjust your filters</Text>
         </View>
       ) : (
-        /* Results list */
         <>
           <View style={styles.resultsRow}>
             <View style={styles.resultsBadge}>
@@ -348,9 +495,9 @@ const styles = StyleSheet.create({
 
   inputRow: {
     flexDirection: "row",
-    gap: 10,
+    gap: 8,
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   inputWrap: {
     flex: 1,
@@ -372,13 +519,78 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     paddingVertical: 0,
   },
+  filterBtn: {
+    width: 42, height: 42, borderRadius: 12,
+    backgroundColor: Colors.dark.surface,
+    borderWidth: 1, borderColor: Colors.dark.border,
+    alignItems: "center", justifyContent: "center",
+  },
+  filterBtnActive: {
+    backgroundColor: Colors.dark.primaryLight,
+    borderColor: Colors.dark.primary,
+  },
+  filterBtnBadged: {
+    backgroundColor: Colors.dark.secondaryLight,
+    borderColor: Colors.dark.secondary,
+  },
+  filterBadge: {
+    position: "absolute", top: 4, right: 4,
+    width: 14, height: 14, borderRadius: 7,
+    backgroundColor: Colors.dark.secondary,
+    alignItems: "center", justifyContent: "center",
+  },
+  filterBadgeText: { color: "#fff", fontSize: 9, fontFamily: "Inter_700Bold" },
   searchBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 44, height: 44, borderRadius: 12,
     backgroundColor: Colors.dark.primary,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center", justifyContent: "center",
+  },
+
+  filterPanel: {
+    backgroundColor: Colors.dark.surface,
+    borderRadius: 14, borderWidth: 1, borderColor: Colors.dark.border,
+    padding: 14, marginBottom: 8, gap: 12,
+  },
+  filterSection: { gap: 8 },
+  filterSectionTitle: {
+    color: Colors.dark.textSecondary, fontSize: 11,
+    fontFamily: "Inter_600SemiBold", letterSpacing: 1.2, textTransform: "uppercase",
+  },
+  filterChipRow: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
+  filterChip: {
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8,
+    backgroundColor: Colors.dark.background,
+    borderWidth: 1, borderColor: Colors.dark.border,
+  },
+  filterChipActive: {
+    backgroundColor: Colors.dark.primaryLight, borderColor: Colors.dark.primary,
+  },
+  filterChipText: { color: Colors.dark.textSecondary, fontSize: 12, fontFamily: "Inter_500Medium" },
+  filterChipTextActive: { color: Colors.dark.primary, fontFamily: "Inter_600SemiBold" },
+  filterActions: { flexDirection: "row", gap: 8, justifyContent: "flex-end", marginTop: 4 },
+  filterClearBtn: {
+    paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8,
+    backgroundColor: Colors.dark.background,
+    borderWidth: 1, borderColor: Colors.dark.border,
+  },
+  filterClearText: { color: Colors.dark.textSecondary, fontSize: 13, fontFamily: "Inter_500Medium" },
+  filterApplyBtn: {
+    paddingHorizontal: 18, paddingVertical: 7, borderRadius: 8,
+    backgroundColor: Colors.dark.primary,
+  },
+  filterApplyText: { color: "#fff", fontSize: 13, fontFamily: "Inter_600SemiBold" },
+
+  activeFiltersRow: {
+    flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 6,
+  },
+  activeFilterTag: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    paddingHorizontal: 10, paddingVertical: 4,
+    backgroundColor: Colors.dark.secondaryLight,
+    borderRadius: 20, borderWidth: 1, borderColor: Colors.dark.secondary,
+  },
+  activeFilterTagText: {
+    color: Colors.dark.secondary, fontSize: 11, fontFamily: "Inter_600SemiBold",
   },
 
   suggestionsScroll: { flex: 1 },
@@ -426,6 +638,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Inter_400Regular",
     textAlign: "center",
+    paddingHorizontal: 32,
   },
 
   resultsRow: {
