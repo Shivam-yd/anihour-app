@@ -202,7 +202,7 @@ export default function SearchScreen() {
           </TouchableOpacity>
 
           {/* Genre Discovery */}
-          <View style={[styles.genreSectionHeader, { marginTop: 4 }]}>
+          <View style={styles.genreSectionHeader}>
             <View style={styles.genreAccent} />
             <Text style={styles.genreSectionTitle}>Browse by Genre</Text>
           </View>
