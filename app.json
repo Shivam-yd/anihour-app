@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "anihour",
+    "slug": "anihour",
+    "extra": {
+      "eas": {
+        "projectId": "f860ecf9-dcc4-4d2f-9402-ecc111ba76e9"
+      }
+    },
+    "platforms": [
+      "android",
+      "ios"
+    ],
+    "appId": "com.yourname.anihour",
+    "android": {
+      "package": "com.roberty.anihour"
+    }
+  }
+}
