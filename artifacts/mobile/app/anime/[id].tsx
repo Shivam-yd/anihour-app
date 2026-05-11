@@ -399,6 +399,8 @@ export default function AnimeDetailScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.hScroll}
+              nestedScrollEnabled={true}
+              scrollEventThrottle={16}
             >
               {characters.map((c) => (
                 <View key={c.character.mal_id} style={styles.charCard}>
@@ -489,6 +491,8 @@ export default function AnimeDetailScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.hScroll}
+              nestedScrollEnabled={true}
+              scrollEventThrottle={16}
             >
               {recommendations.map((rec) => {
                 const { entry, votes } = rec;

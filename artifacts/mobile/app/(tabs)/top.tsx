@@ -173,6 +173,8 @@ export default function TopScreen() {
             showsHorizontalScrollIndicator={false}
             style={styles.typesRow}
             contentContainerStyle={styles.typesRowContent}
+            nestedScrollEnabled={true}
+            scrollEventThrottle={16}
           >
             {(isManga ? MANGA_TYPES : ANIME_TYPES).map((item) => {
               const active = isManga ? mangaType === item.key : animeType === item.key;

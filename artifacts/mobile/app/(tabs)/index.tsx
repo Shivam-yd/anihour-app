@@ -81,33 +81,83 @@ function FeaturedHero({ anime, onPress }: { anime: Anime; onPress: () => void })
 }
 
 function HeroSlider({ anime }: { anime: Anime[] }) {
+  const featured = useMemo(() => anime.slice(0, 5), [anime]);
+  const flatListRef = useRef<FlatList>(null);
   const [current, setCurrent] = useState(0);
-  const featured = anime.slice(0, 5);
+  const currentRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
+  const startTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
     if (featured.length < 2) return;
     timerRef.current = setInterval(() => {
-      setCurrent((c) => (c + 1) % featured.length);
+      const next = (currentRef.current + 1) % featured.length;
+      flatListRef.current?.scrollToIndex({ index: next, animated: true });
+      currentRef.current = next;
+      setCurrent(next);
     }, 4000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [featured.length]);
 
+  useEffect(() => {
+    startTimer();
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [startTimer]);
+
+  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
+    if (viewableItems.length > 0) {
+      const idx = viewableItems[0].index ?? 0;
+      currentRef.current = idx;
+      setCurrent(idx);
+    }
+  }).current;
+
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
+
+  const getItemLayout = useCallback((_: any, index: number) => ({
+    length: SCREEN_WIDTH,
+    offset: SCREEN_WIDTH * index,
+    index,
+  }), []);
+
   if (featured.length === 0) return null;
-  const item = featured[current];
 
   return (
     <View style={styles.heroContainer}>
-      <FeaturedHero
-        anime={item}
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          router.push({ pathname: "/anime/[id]", params: { id: item.mal_id } });
-        }}
+      <FlatList
+        ref={flatListRef}
+        data={featured}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(item) => `hero-${item.mal_id}`}
+        renderItem={({ item }) => (
+          <View style={{ width: SCREEN_WIDTH }}>
+            <View style={{ marginHorizontal: 16 }}>
+              <FeaturedHero
+                anime={item}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.push({ pathname: "/anime/[id]", params: { id: item.mal_id } });
+                }}
+              />
+            </View>
+          </View>
+        )}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
+        getItemLayout={getItemLayout}
+        scrollEventThrottle={16}
+        decelerationRate="fast"
+        onScrollBeginDrag={() => { if (timerRef.current) clearInterval(timerRef.current); }}
+        onMomentumScrollEnd={startTimer}
       />
       <View style={styles.dotRow}>
         {featured.map((_, i) => (
-          <Pressable key={i} onPress={() => setCurrent(i)}>
+          <Pressable key={i} onPress={() => {
+            flatListRef.current?.scrollToIndex({ index: i, animated: true });
+            currentRef.current = i;
+            setCurrent(i);
+          }}>
             <View style={[styles.dot, i === current && styles.dotActive]} />
           </Pressable>
         ))}
@@ -354,7 +404,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   archiveBtnText: { color: Colors.dark.accent, fontSize: 12, fontFamily: "Inter_600SemiBold" },
-  heroContainer: { marginHorizontal: 16, marginBottom: 16 },
+  heroContainer: { marginBottom: 16 },
   heroCard: {
     height: 220, borderRadius: 16, overflow: "hidden",
     backgroundColor: Colors.dark.surface, borderWidth: 1, borderColor: Colors.dark.border,
