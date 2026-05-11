@@ -132,5 +132,5 @@ overrides:
   yaml: ">=2.8.4"
   brace-expansion: ">=5.0.5"
   # minimatch@3 (used by @react-native/codegen via glob@7) requires brace-expansion v1.x
-  "minimatch>brace-expansion": "^1.1.11"
+  "minimatch@3>brace-expansion": "^1.1.11"
   uuid: ">=14.0.0"
