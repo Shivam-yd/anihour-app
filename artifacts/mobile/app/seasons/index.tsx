@@ -1,6 +1,6 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React from "react";
+import { memo } from "react";
 import {
   FlatList,
   Platform,
@@ -35,7 +35,7 @@ function getYears(): number[] {
   return years;
 }
 
-const YearRow = React.memo(function YearRow({ year }: { year: number }) {
+const YearRow = memo(function YearRow({ year }: { year: number }) {
   return (
     <View style={styles.yearBlock}>
       <Text style={styles.yearLabel}>{year}</Text>

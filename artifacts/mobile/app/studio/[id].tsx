@@ -2,7 +2,7 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -23,7 +23,7 @@ import { chunkArray } from "@/lib/utils";
 
 const CARD_COLS = 3;
 
-const StudioAnimeCard = React.memo(function StudioAnimeCard({ anime }: { anime: Anime }) {
+const StudioAnimeCard = memo(function StudioAnimeCard({ anime }: { anime: Anime }) {
   const imageUrl = anime.images?.jpg?.large_image_url ?? anime.images?.jpg?.image_url;
   const title = anime.title_english ?? anime.title;
   return (

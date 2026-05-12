@@ -1,7 +1,6 @@
 import { BlurView } from "expo-blur";
 import { Tabs } from "expo-router";
 import { Feather, Ionicons } from "@expo/vector-icons";
-import React from "react";
 import { Platform, StyleSheet, View } from "react-native";
 
 import Colors from "@/constants/colors";

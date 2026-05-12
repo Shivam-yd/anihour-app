@@ -1,7 +1,7 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useScrollToTop } from "@react-navigation/native";
-import React, { useCallback, useRef } from "react";
+import { useCallback, useRef } from "react";
 import {
   FlatList,
   Platform,
