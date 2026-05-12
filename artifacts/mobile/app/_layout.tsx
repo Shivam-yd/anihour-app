@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   },
   splashTitle: {
     fontSize: 44,
-    fontWeight: "800",
+    fontFamily: "Inter_700Bold",
     letterSpacing: 1,
     textAlign: "center",
     marginBottom: 8,
