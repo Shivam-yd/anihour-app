@@ -8,9 +8,8 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { Image } from "expo-image";
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Easing, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, Image, StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -33,8 +32,7 @@ const queryClient = new QueryClient({
 });
 
 function AniHourSplash() {
-  const logoScale = useRef(new Animated.Value(0.6)).current;
-  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const logoScale = useRef(new Animated.Value(0.85)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
   const taglineOpacity = useRef(new Animated.Value(0)).current;
 
@@ -44,19 +42,12 @@ function AniHourSplash() {
 
   useEffect(() => {
     Animated.sequence([
-      Animated.parallel([
-        Animated.spring(logoScale, {
-          toValue: 1,
-          friction: 4,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-        Animated.timing(logoOpacity, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-      ]),
+      Animated.spring(logoScale, {
+        toValue: 1,
+        friction: 4,
+        tension: 40,
+        useNativeDriver: true,
+      }),
       Animated.timing(textOpacity, {
         toValue: 1,
         duration: 400,
@@ -86,15 +77,12 @@ function AniHourSplash() {
 
       <View style={styles.splashCenter}>
         <Animated.View
-          style={[
-            styles.splashLogo,
-            { opacity: logoOpacity, transform: [{ scale: logoScale }] },
-          ]}
+          style={[styles.splashLogo, { transform: [{ scale: logoScale }] }]}
         >
           <Image
             source={require("../assets/images/icon.png")}
             style={styles.splashLogoImg}
-            contentFit="contain"
+            resizeMode="contain"
           />
         </Animated.View>
 
