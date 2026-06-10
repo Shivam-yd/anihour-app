@@ -139,30 +139,51 @@ export const GENRE_MAP: Record<string, { id: number; label: string }> = {
   "super-power": { id: 31, label: "Super Power" },
 };
 
+// ─── Global Jikan request queue ────────────────────────────────────────────
+// Jikan allows 3 requests/second. We space every call at least 360 ms apart
+// so concurrent fetches (list + detail + recommendations) never collide.
+const JIKAN_INTERVAL_MS = 360;
+let _queueTail: Promise<void> = Promise.resolve();
+
+function rateLimited<T>(fn: () => Promise<T>): Promise<T> {
+  const slot = _queueTail;
+  let release!: () => void;
+  _queueTail = new Promise<void>((r) => { release = r; });
+  return slot.then(() =>
+    fn().then(
+      (v) => { setTimeout(release, JIKAN_INTERVAL_MS); return v; },
+      (e) => { setTimeout(release, JIKAN_INTERVAL_MS); throw e; }
+    )
+  );
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 async function fetchWithRetry(url: string, retries = 3): Promise<unknown> {
-  for (let i = 0; i <= retries; i++) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 10000);
-    try {
-      const res = await fetch(url, {
-        headers: { Accept: "application/json" },
-        signal: controller.signal,
-      });
-      clearTimeout(timer);
-      if (res.status === 429) {
-        if (i === retries) throw new Error("Rate limit exceeded");
-        await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
-        continue;
+  return rateLimited(async () => {
+    for (let i = 0; i <= retries; i++) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 12000);
+      try {
+        const res = await fetch(url, {
+          headers: { Accept: "application/json" },
+          signal: controller.signal,
+        });
+        clearTimeout(timer);
+        if (res.status === 429) {
+          if (i === retries) throw new Error("Rate limit exceeded");
+          await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
+          continue;
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+      } catch (e) {
+        clearTimeout(timer);
+        if (i === retries) throw e;
+        await new Promise((r) => setTimeout(r, 600 * (i + 1)));
       }
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return await res.json();
-    } catch (e) {
-      clearTimeout(timer);
-      if (i === retries) throw e;
-      await new Promise((r) => setTimeout(r, 800 * (i + 1)));
     }
-  }
-  throw new Error("Fetch failed");
+    throw new Error("Fetch failed");
+  });
 }
 
 export async function fetchSeasonNow(

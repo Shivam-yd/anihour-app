@@ -58,7 +58,8 @@ export default function AnimeDetailScreen() {
     queryKey: ["detail", id, contentType],
     queryFn: () => isManga ? fetchMangaById(Number(id)) : fetchAnimeById(Number(id)),
     enabled: !!id,
-    retry: false,
+    retry: 2,
+    retryDelay: 1500,
   });
 
   const { data: recommendations = [] } = useQuery<Recommendation[]>({
