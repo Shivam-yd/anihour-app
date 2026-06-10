@@ -54,9 +54,13 @@ export default function AnimeDetailScreen() {
   const isManga = contentType === "manga";
   const ct: ContentType = isManga ? "manga" : "anime";
 
-  const { data: anime, isLoading, isFetching, isError, refetch } = useQuery({
+  const { data: anime, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ["detail", id, contentType],
-    queryFn: () => isManga ? fetchMangaById(Number(id)) : fetchAnimeById(Number(id)),
+    queryFn: async () => {
+      const result = isManga ? await fetchMangaById(Number(id)) : await fetchAnimeById(Number(id));
+      if (!result) throw new Error("No data returned for id=" + id);
+      return result;
+    },
     enabled: !!id,
     retry: 2,
     retryDelay: 1500,
@@ -153,11 +157,13 @@ export default function AnimeDetailScreen() {
   }
 
   if (isError || !anime) {
+    const errMsg = error instanceof Error ? error.message : String(error ?? "unknown");
+    console.error("[AnimeDetail] load failed id=" + id, errMsg);
     return (
       <View style={styles.centered}>
         <Ionicons name="sad-outline" size={48} color={Colors.dark.textTertiary} />
         <Text style={styles.errorTitle}>Couldn't load details</Text>
-        <Text style={styles.errorSub}>The server may be busy — try again in a moment</Text>
+        <Text style={styles.errorSub}>{errMsg}</Text>
         <View style={styles.errorBtnRow}>
           <TouchableOpacity style={styles.retryBtnFull} onPress={() => refetch()} activeOpacity={0.85}>
             <Feather name="refresh-cw" size={16} color="#fff" />
