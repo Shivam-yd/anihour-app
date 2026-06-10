@@ -12,7 +12,6 @@ import {
   Platform,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -83,56 +82,56 @@ function FeaturedHero({ anime, onPress }: { anime: Anime; onPress: () => void })
 
 function HeroSlider({ anime }: { anime: Anime[] }) {
   const featured = useMemo(() => anime.slice(0, 5), [anime]);
-  const scrollRef = useRef<ScrollView>(null);
+  const flatListRef = useRef<FlatList>(null);
   const [current, setCurrent] = useState(0);
   const currentRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const scrollTo = useCallback((index: number) => {
-    scrollRef.current?.scrollTo({ x: index * SCREEN_WIDTH, animated: true });
-  }, []);
 
   const startTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (featured.length < 2) return;
     timerRef.current = setInterval(() => {
       const next = (currentRef.current + 1) % featured.length;
-      scrollTo(next);
+      flatListRef.current?.scrollToIndex({ index: next, animated: true });
       currentRef.current = next;
       setCurrent(next);
     }, 4000);
-  }, [featured.length, scrollTo]);
+  }, [featured.length]);
 
   useEffect(() => {
     startTimer();
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [startTimer]);
 
-  const onScroll = useCallback((e: any) => {
-    const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
-    if (idx !== currentRef.current) {
+  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
+    if (viewableItems.length > 0) {
+      const idx = viewableItems[0].index ?? 0;
       currentRef.current = idx;
       setCurrent(idx);
     }
-  }, []);
+  }).current;
+
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
+
+  const getItemLayout = useCallback((_: any, index: number) => ({
+    length: SCREEN_WIDTH,
+    offset: SCREEN_WIDTH * index,
+    index,
+  }), []);
 
   if (featured.length === 0) return null;
 
   return (
     <View style={styles.heroContainer}>
-      <ScrollView
-        ref={scrollRef}
+      <FlatList
+        ref={flatListRef}
+        data={featured}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        scrollEventThrottle={16}
-        decelerationRate="fast"
-        onScroll={onScroll}
-        onScrollBeginDrag={() => { if (timerRef.current) clearInterval(timerRef.current); }}
-        onMomentumScrollEnd={startTimer}
-      >
-        {featured.map((item) => (
-          <View key={`hero-${item.mal_id}`} style={{ width: SCREEN_WIDTH }}>
+        keyExtractor={(item) => `hero-${item.mal_id}`}
+        renderItem={({ item }) => (
+          <View style={{ width: SCREEN_WIDTH }}>
             <View style={{ marginHorizontal: 16 }}>
               <FeaturedHero
                 anime={item}
@@ -143,12 +142,19 @@ function HeroSlider({ anime }: { anime: Anime[] }) {
               />
             </View>
           </View>
-        ))}
-      </ScrollView>
+        )}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
+        getItemLayout={getItemLayout}
+        scrollEventThrottle={16}
+        decelerationRate="fast"
+        onScrollBeginDrag={() => { if (timerRef.current) clearInterval(timerRef.current); }}
+        onMomentumScrollEnd={startTimer}
+      />
       <View style={styles.dotRow}>
         {featured.map((_, i) => (
           <Pressable key={i} onPress={() => {
-            scrollTo(i);
+            flatListRef.current?.scrollToIndex({ index: i, animated: true });
             currentRef.current = i;
             setCurrent(i);
           }}>

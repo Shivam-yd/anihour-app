@@ -27,6 +27,8 @@ import {
   fetchAnimeById,
   fetchMangaById,
   fetchRecommendations,
+  fetchCharacters,
+  type Character,
   type Anime,
   type ContentType,
   type Recommendation,
@@ -46,6 +48,7 @@ const STREAMING_COLORS: Record<string, { bg: string; text: string }> = {
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const HEADER_HEIGHT = SCREEN_HEIGHT * 0.42;
+const CHAR_CARD_W = 88;
 
 export default function AnimeDetailScreen() {
   const { id, contentType } = useLocalSearchParams<{ id: string; contentType?: string }>();
@@ -54,11 +57,16 @@ export default function AnimeDetailScreen() {
   const isManga = contentType === "manga";
   const ct: ContentType = isManga ? "manga" : "anime";
 
-  const { data: anime, isLoading, isFetching, isError, refetch } = useQuery({
+  const { data: anime, isLoading, isError } = useQuery({
     queryKey: ["detail", id, contentType],
     queryFn: () => isManga ? fetchMangaById(Number(id)) : fetchAnimeById(Number(id)),
     enabled: !!id,
-    retry: false,
+  });
+
+  const { data: characters = [] } = useQuery<Character[]>({
+    queryKey: ["characters", id, contentType],
+    queryFn: () => fetchCharacters(Number(id), ct),
+    enabled: !!id && !!anime,
   });
 
   const { data: recommendations = [] } = useQuery<Recommendation[]>({
@@ -130,7 +138,7 @@ export default function AnimeDetailScreen() {
     </Pressable>
   );
 
-  if (isLoading || isFetching) {
+  if (isLoading) {
     return (
       <View style={[styles.container, { paddingTop: topOffset }]}>
         <ShimmerBox width="100%" height={HEADER_HEIGHT} borderRadius={0} />
@@ -156,17 +164,10 @@ export default function AnimeDetailScreen() {
       <View style={styles.centered}>
         <Ionicons name="sad-outline" size={48} color={Colors.dark.textTertiary} />
         <Text style={styles.errorTitle}>Couldn't load details</Text>
-        <Text style={styles.errorSub}>The server may be busy — try again in a moment</Text>
-        <View style={styles.errorBtnRow}>
-          <TouchableOpacity style={styles.retryBtnFull} onPress={() => refetch()} activeOpacity={0.85}>
-            <Feather name="refresh-cw" size={16} color="#fff" />
-            <Text style={styles.backBtnFullText}>Retry</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.backBtnFull} onPress={handleBack} activeOpacity={0.85}>
-            <Feather name="arrow-left" size={16} color="#fff" />
-            <Text style={styles.backBtnFullText}>Go Back</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity style={styles.backBtnFull} onPress={handleBack} activeOpacity={0.85}>
+          <Feather name="arrow-left" size={18} color="#fff" />
+          <Text style={styles.backBtnFullText}>Go Back</Text>
+        </TouchableOpacity>
         {backBtn}
       </View>
     );
@@ -390,6 +391,35 @@ export default function AnimeDetailScreen() {
           );
         })()}
 
+        {/* Characters */}
+        {characters.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Characters</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.hScroll}
+              nestedScrollEnabled={true}
+              scrollEventThrottle={16}
+            >
+              {characters.map((c) => (
+                <View key={c.character.mal_id} style={styles.charCard}>
+                  <Image
+                    source={{ uri: c.character.images?.jpg?.image_url }}
+                    style={styles.charImage}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                  <View style={styles.charRoleBadge}>
+                    <Text style={styles.charRoleText}>{c.role === "Main" ? "Main" : "Sub"}</Text>
+                  </View>
+                  <Text style={styles.charName} numberOfLines={2}>{c.character.name}</Text>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
         {/* Broadcast schedule (anime only) */}
         {!isManga && anime.broadcast?.string && (
           <View style={styles.section}>
@@ -551,13 +581,6 @@ const styles = StyleSheet.create({
   skeletonBadgeRow: { flexDirection: "row", gap: 8, marginTop: 14 },
   skeletonStatsRow: { flexDirection: "row", gap: 8, marginTop: 14 },
   errorTitle: { color: Colors.dark.text, fontSize: 18, fontFamily: "Inter_600SemiBold" },
-  errorSub: { color: Colors.dark.textTertiary, fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center", paddingHorizontal: 32 },
-  errorBtnRow: { flexDirection: "row", gap: 10, marginTop: 4 },
-  retryBtnFull: {
-    flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: Colors.dark.secondary, paddingHorizontal: 20, paddingVertical: 12,
-    borderRadius: 12,
-  },
   backBtn: {
     position: "absolute", left: 16, width: 40, height: 40, borderRadius: 20,
     backgroundColor: "rgba(26,26,46,0.85)", alignItems: "center", justifyContent: "center",
@@ -625,6 +648,19 @@ const styles = StyleSheet.create({
   readMore: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 8 },
   readMoreText: { color: Colors.dark.primary, fontSize: 13, fontFamily: "Inter_500Medium" },
   hScroll: { paddingRight: 16 },
+  // Characters
+  charCard: { width: CHAR_CARD_W, marginRight: 10, alignItems: "center" },
+  charImage: { width: CHAR_CARD_W, height: CHAR_CARD_W * 1.3, borderRadius: 10, backgroundColor: Colors.dark.surface },
+  charRoleBadge: {
+    position: "absolute", top: 6, right: 4,
+    backgroundColor: "rgba(26,26,46,0.85)",
+    borderRadius: 4, paddingHorizontal: 4, paddingVertical: 2,
+  },
+  charRoleText: { color: Colors.dark.primary, fontSize: 8, fontFamily: "Inter_600SemiBold" },
+  charName: {
+    color: Colors.dark.textSecondary, fontSize: 10, fontFamily: "Inter_400Regular",
+    marginTop: 5, textAlign: "center", lineHeight: 14,
+  },
   infoRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingTop: 12 },
   infoText: { color: Colors.dark.textSecondary, fontSize: 13, fontFamily: "Inter_400Regular" },
   broadcastRow: { flexDirection: "row", alignItems: "center", gap: 8 },
