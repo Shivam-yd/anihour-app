@@ -69,7 +69,7 @@ export default function SearchScreen() {
   const inputRef = useRef<TextInput>(null);
   const resultsRef = useRef<FlatList>(null);
   useScrollToTop(resultsRef);
-  const { contentType, isAdultMode } = useContentSettings();
+  const { contentType, isAdultMode, toggleAdultMode } = useContentSettings();
   const isManga = contentType === "manga";
   const suggestions = isManga ? MANGA_SUGGESTIONS : SUGGESTIONS;
 
@@ -138,8 +138,18 @@ export default function SearchScreen() {
           <View>
             <Text style={styles.headerTitle}>Search {isManga ? "Manga" : "Anime"}</Text>
           </View>
-          <View style={styles.searchIcon}>
-            <Feather name="search" size={20} color={Colors.dark.primary} />
+          <View style={styles.titleActions}>
+            <TouchableOpacity
+              style={[styles.adultBtn, isAdultMode && styles.adultBtnActive]}
+              onPress={toggleAdultMode}
+              activeOpacity={0.75}
+              hitSlop={8}
+            >
+              <Text style={[styles.adultText, isAdultMode && styles.adultTextActive]}>18+</Text>
+            </TouchableOpacity>
+            <View style={styles.searchIcon}>
+              <Feather name="search" size={20} color={Colors.dark.primary} />
+            </View>
           </View>
         </View>
 
@@ -308,6 +318,21 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 16, paddingBottom: 4, backgroundColor: Colors.dark.background },
   titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
   headerTitle: { color: Colors.dark.text, fontSize: 26, fontFamily: "Inter_700Bold" },
+  titleActions: { flexDirection: "row", alignItems: "center", gap: 10 },
+  adultBtn: {
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 10, backgroundColor: Colors.dark.surface,
+    borderWidth: 1, borderColor: Colors.dark.border,
+  },
+  adultBtnActive: {
+    backgroundColor: "rgba(239,68,68,0.15)",
+    borderColor: "#ef4444",
+  },
+  adultText: {
+    color: Colors.dark.textTertiary, fontSize: 13,
+    fontFamily: "Inter_700Bold", letterSpacing: 0.5,
+  },
+  adultTextActive: { color: "#ef4444" },
   searchIcon: {
     width: 44, height: 44, borderRadius: 12,
     backgroundColor: Colors.dark.primaryLight,
