@@ -57,10 +57,12 @@ export default function AnimeDetailScreen() {
   const isManga = contentType === "manga";
   const ct: ContentType = isManga ? "manga" : "anime";
 
-  const { data: anime, isLoading, isError } = useQuery({
+  const { data: anime, isLoading, isError, refetch } = useQuery({
     queryKey: ["detail", id, contentType],
     queryFn: () => isManga ? fetchMangaById(Number(id)) : fetchAnimeById(Number(id)),
     enabled: !!id,
+    retry: 4,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 
   const { data: characters = [] } = useQuery<Character[]>({
@@ -164,10 +166,17 @@ export default function AnimeDetailScreen() {
       <View style={styles.centered}>
         <Ionicons name="sad-outline" size={48} color={Colors.dark.textTertiary} />
         <Text style={styles.errorTitle}>Couldn't load details</Text>
-        <TouchableOpacity style={styles.backBtnFull} onPress={handleBack} activeOpacity={0.85}>
-          <Feather name="arrow-left" size={18} color="#fff" />
-          <Text style={styles.backBtnFullText}>Go Back</Text>
-        </TouchableOpacity>
+        <Text style={styles.errorSub}>The server may be busy — try again in a moment</Text>
+        <View style={styles.errorBtnRow}>
+          <TouchableOpacity style={styles.retryBtnFull} onPress={() => refetch()} activeOpacity={0.85}>
+            <Feather name="refresh-cw" size={16} color="#fff" />
+            <Text style={styles.backBtnFullText}>Retry</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.backBtnFull} onPress={handleBack} activeOpacity={0.85}>
+            <Feather name="arrow-left" size={16} color="#fff" />
+            <Text style={styles.backBtnFullText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
         {backBtn}
       </View>
     );
@@ -581,6 +590,13 @@ const styles = StyleSheet.create({
   skeletonBadgeRow: { flexDirection: "row", gap: 8, marginTop: 14 },
   skeletonStatsRow: { flexDirection: "row", gap: 8, marginTop: 14 },
   errorTitle: { color: Colors.dark.text, fontSize: 18, fontFamily: "Inter_600SemiBold" },
+  errorSub: { color: Colors.dark.textTertiary, fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center", paddingHorizontal: 32 },
+  errorBtnRow: { flexDirection: "row", gap: 10, marginTop: 4 },
+  retryBtnFull: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: Colors.dark.secondary, paddingHorizontal: 20, paddingVertical: 12,
+    borderRadius: 12,
+  },
   backBtn: {
     position: "absolute", left: 16, width: 40, height: 40, borderRadius: 20,
     backgroundColor: "rgba(26,26,46,0.85)", alignItems: "center", justifyContent: "center",
