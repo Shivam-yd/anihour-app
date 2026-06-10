@@ -57,12 +57,11 @@ export default function AnimeDetailScreen() {
   const isManga = contentType === "manga";
   const ct: ContentType = isManga ? "manga" : "anime";
 
-  const { data: anime, isLoading, isError, refetch } = useQuery({
+  const { data: anime, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ["detail", id, contentType],
     queryFn: () => isManga ? fetchMangaById(Number(id)) : fetchAnimeById(Number(id)),
     enabled: !!id,
-    retry: 4,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
+    retry: false,
   });
 
   const { data: characters = [] } = useQuery<Character[]>({
@@ -140,7 +139,7 @@ export default function AnimeDetailScreen() {
     </Pressable>
   );
 
-  if (isLoading) {
+  if (isLoading || isFetching) {
     return (
       <View style={[styles.container, { paddingTop: topOffset }]}>
         <ShimmerBox width="100%" height={HEADER_HEIGHT} borderRadius={0} />
