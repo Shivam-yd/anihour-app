@@ -128,6 +128,7 @@ function HeroSlider({ anime }: { anime: Anime[] }) {
         data={featured}
         horizontal
         pagingEnabled
+        nestedScrollEnabled
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item) => `hero-${item.mal_id}`}
         renderItem={({ item }) => (
