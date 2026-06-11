@@ -11,7 +11,7 @@ export function ContentToggleBar() {
     <View style={styles.bar}>
       <View style={styles.segmented}>
         <Pressable
-          style={[styles.segment, styles.segmentLeft, isAnime && styles.segmentActiveAnime]}
+          style={[styles.segment, isAnime && styles.segmentActiveAnime]}
           onPress={() => !isAnime && toggleContentType()}
         >
           <Text style={[styles.segmentText, isAnime && styles.segmentTextAnime]}>
@@ -22,7 +22,7 @@ export function ContentToggleBar() {
         <View style={styles.divider} />
 
         <Pressable
-          style={[styles.segment, styles.segmentRight, !isAnime && styles.segmentActiveManga]}
+          style={[styles.segment, !isAnime && styles.segmentActiveManga]}
           onPress={() => isAnime && toggleContentType()}
         >
           <Text style={[styles.segmentText, !isAnime && styles.segmentTextManga]}>
@@ -36,9 +36,6 @@ export function ContentToggleBar() {
 
 const styles = StyleSheet.create({
   bar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 14,
   },
@@ -51,18 +48,10 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   segment: {
-    paddingHorizontal: 22,
-    paddingVertical: 8,
+    flex: 1,
+    paddingVertical: 9,
     alignItems: "center",
     justifyContent: "center",
-  },
-  segmentLeft: {
-    borderTopLeftRadius: 9,
-    borderBottomLeftRadius: 9,
-  },
-  segmentRight: {
-    borderTopRightRadius: 9,
-    borderBottomRightRadius: 9,
   },
   segmentActiveAnime: {
     backgroundColor: Colors.dark.primaryLight,

@@ -36,23 +36,30 @@ export default function UpcomingScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState(false);
+  const genRef = useRef(0);
 
   const load = useCallback(async (p: number, ct: typeof contentType, adult: boolean, refresh = false) => {
+    genRef.current += 1;
+    const gen = genRef.current;
     if (refresh) setIsRefreshing(true);
     else if (p === 1) { setLoading(true); setError(false); }
     else setLoadingMore(true);
 
     try {
       const { items, hasNext } = await fetchUpcoming(p, ct, adult);
+      if (gen !== genRef.current) return;
       setAllAnime(prev => p === 1 ? items : [...prev, ...items]);
       setHasMore(hasNext);
       setPage(p);
     } catch {
+      if (gen !== genRef.current) return;
       if (p === 1) setError(true);
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
-      setIsRefreshing(false);
+      if (gen === genRef.current) {
+        setLoading(false);
+        setLoadingMore(false);
+        setIsRefreshing(false);
+      }
     }
   }, []);
 

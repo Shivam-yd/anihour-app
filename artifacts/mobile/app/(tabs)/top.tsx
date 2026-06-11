@@ -81,7 +81,7 @@ export default function TopScreen() {
     ? (mangaType === "all" ? undefined : mangaType)
     : (animeType === "all" ? undefined : animeType);
 
-  const isLoadingRef = useRef(false);
+  const genRef = useRef(0);
 
   const load = useCallback(async (
     p: number,
@@ -91,8 +91,8 @@ export default function TopScreen() {
     adult: boolean,
     refresh = false
   ) => {
-    if (p === 1 && isLoadingRef.current) return;
-    isLoadingRef.current = true;
+    genRef.current += 1;
+    const gen = genRef.current;
     if (refresh) setIsRefreshing(true);
     else if (p === 1) { setLoading(true); setError(false); }
     else setLoadingMore(true);
@@ -100,16 +100,19 @@ export default function TopScreen() {
     try {
       const safF: Filter = ct === "manga" && (f === "airing" || f === "upcoming") ? "bypopularity" : f;
       const { items, hasNext } = await fetchTopAnime(p, safF, type, ct, adult);
+      if (gen !== genRef.current) return;
       setAllAnime(prev => p === 1 ? items : [...prev, ...items]);
       setHasMore(hasNext);
       setPage(p);
     } catch {
+      if (gen !== genRef.current) return;
       if (p === 1) setError(true);
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
-      setIsRefreshing(false);
-      isLoadingRef.current = false;
+      if (gen === genRef.current) {
+        setLoading(false);
+        setLoadingMore(false);
+        setIsRefreshing(false);
+      }
     }
   }, []);
 
