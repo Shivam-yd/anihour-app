@@ -20,4 +20,16 @@ config.resolver.blockList = [
   new RegExp(`^${escapedLocalDir}[/\\\\].*$`),
 ];
 
+// Disable browser caching so the preview always loads the latest bundle
+config.server = {
+  ...config.server,
+  enhanceMiddleware: (middleware) => {
+    return (req, res, next) => {
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      return middleware(req, res, next);
+    };
+  },
+};
+
 module.exports = config;

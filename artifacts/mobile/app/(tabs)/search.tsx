@@ -172,14 +172,11 @@ export default function SearchScreen() {
               blurOnSubmit={false}
             />
             {query.length > 0 && (
-              <TouchableOpacity
-                onPress={handleClear}
-                hitSlop={10}
-                activeOpacity={0.7}
-                style={{ alignSelf: "center", justifyContent: "center", alignItems: "center" }}
-              >
-                <Feather name="x-circle" size={16} color={Colors.dark.textTertiary} />
-              </TouchableOpacity>
+              <View style={styles.clearBtnWrap}>
+                <TouchableOpacity onPress={handleClear} hitSlop={10} activeOpacity={0.7}>
+                  <Feather name="x-circle" size={16} color={Colors.dark.textTertiary} />
+                </TouchableOpacity>
+              </View>
             )}
           </View>
           <TouchableOpacity style={styles.searchBtn} onPress={() => handleSearch(query)} activeOpacity={0.8}>
@@ -348,11 +345,12 @@ const styles = StyleSheet.create({
   inputWrap: {
     flex: 1, flexDirection: "row", alignItems: "center",
     backgroundColor: Colors.dark.surface, borderRadius: 12,
-    paddingHorizontal: 12, paddingVertical: Platform.OS === "ios" ? 10 : 8,
+    paddingHorizontal: 12, height: 44,
     borderWidth: 1, borderColor: Colors.dark.border, gap: 8,
   },
   inputIcon: { flexShrink: 0 },
   input: { flex: 1, color: Colors.dark.text, fontSize: 15, fontFamily: "Inter_400Regular", paddingVertical: 0 },
+  clearBtnWrap: { width: 20, height: 20, alignItems: "center", justifyContent: "center" },
   searchBtn: {
     width: 44, height: 44, borderRadius: 12,
     backgroundColor: Colors.dark.primary, alignItems: "center", justifyContent: "center",
