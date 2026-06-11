@@ -160,7 +160,7 @@ export default function SearchScreen() {
             <Feather name="search" size={16} color={Colors.dark.primary} style={styles.inputIcon} />
             <TextInput
               ref={inputRef}
-              style={styles.input}
+              style={[styles.input, query.length > 0 && { paddingRight: 28 }]}
               value={query}
               onChangeText={setQuery}
               placeholder={`Search ${isManga ? "manga" : "anime"}...`}
@@ -172,11 +172,14 @@ export default function SearchScreen() {
               blurOnSubmit={false}
             />
             {query.length > 0 && (
-              <View style={styles.clearBtnWrap}>
-                <TouchableOpacity onPress={handleClear} hitSlop={10} activeOpacity={0.7}>
-                  <Feather name="x-circle" size={16} color={Colors.dark.textTertiary} />
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                onPress={handleClear}
+                hitSlop={10}
+                activeOpacity={0.7}
+                style={styles.clearBtn}
+              >
+                <Feather name="x-circle" size={16} color={Colors.dark.textTertiary} />
+              </TouchableOpacity>
             )}
           </View>
           <TouchableOpacity style={styles.searchBtn} onPress={() => handleSearch(query)} activeOpacity={0.8}>
@@ -348,9 +351,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, height: 44,
     borderWidth: 1, borderColor: Colors.dark.border, gap: 8,
   },
-  inputIcon: { flexShrink: 0, alignSelf: "center" },
-  input: { flex: 1, color: Colors.dark.text, fontSize: 15, fontFamily: "Inter_400Regular", paddingVertical: 0, alignSelf: "center" },
-  clearBtnWrap: { width: 20, height: 20, alignItems: "center", justifyContent: "center", alignSelf: "center" },
+  inputIcon: { flexShrink: 0 },
+  input: { flex: 1, color: Colors.dark.text, fontSize: 15, fontFamily: "Inter_400Regular", paddingVertical: 0 },
+  clearBtn: {
+    position: "absolute", right: 12, top: 0, bottom: 0,
+    justifyContent: "center", alignItems: "center", width: 24, zIndex: 1,
+  },
   searchBtn: {
     width: 44, height: 44, borderRadius: 12,
     backgroundColor: Colors.dark.primary, alignItems: "center", justifyContent: "center",
