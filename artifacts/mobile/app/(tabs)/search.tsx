@@ -172,7 +172,12 @@ export default function SearchScreen() {
               blurOnSubmit={false}
             />
             {query.length > 0 && (
-              <TouchableOpacity onPress={handleClear} hitSlop={10} activeOpacity={0.7}>
+              <TouchableOpacity
+                onPress={handleClear}
+                hitSlop={10}
+                activeOpacity={0.7}
+                style={{ alignSelf: "center", justifyContent: "center", alignItems: "center" }}
+              >
                 <Feather name="x-circle" size={16} color={Colors.dark.textTertiary} />
               </TouchableOpacity>
             )}
