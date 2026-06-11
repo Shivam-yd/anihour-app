@@ -348,9 +348,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, height: 44,
     borderWidth: 1, borderColor: Colors.dark.border, gap: 8,
   },
-  inputIcon: { flexShrink: 0 },
-  input: { flex: 1, color: Colors.dark.text, fontSize: 15, fontFamily: "Inter_400Regular", paddingVertical: 0 },
-  clearBtnWrap: { width: 20, height: 20, alignItems: "center", justifyContent: "center" },
+  inputIcon: { flexShrink: 0, alignSelf: "center" },
+  input: { flex: 1, color: Colors.dark.text, fontSize: 15, fontFamily: "Inter_400Regular", paddingVertical: 0, alignSelf: "center" },
+  clearBtnWrap: { width: 20, height: 20, alignItems: "center", justifyContent: "center", alignSelf: "center" },
   searchBtn: {
     width: 44, height: 44, borderRadius: 12,
     backgroundColor: Colors.dark.primary, alignItems: "center", justifyContent: "center",
