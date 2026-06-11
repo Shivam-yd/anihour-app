@@ -160,7 +160,7 @@ export default function SearchScreen() {
             <Feather name="search" size={16} color={Colors.dark.primary} style={styles.inputIcon} />
             <TextInput
               ref={inputRef}
-              style={[styles.input, query.length > 0 && { paddingRight: 28 }]}
+              style={[styles.input, query.length > 0 && { paddingRight: 28 }, Platform.OS === "web" && { outline: "none" } as any]}
               value={query}
               onChangeText={setQuery}
               placeholder={`Search ${isManga ? "manga" : "anime"}...`}
