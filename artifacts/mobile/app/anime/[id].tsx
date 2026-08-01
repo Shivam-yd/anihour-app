@@ -451,7 +451,7 @@ export default function AnimeDetailScreen() {
         {anime.url && (
           <TouchableOpacity style={styles.malButton} onPress={handleMAL} activeOpacity={0.85}>
             <Text style={styles.malButtonText}>
-              View on MyAnimeList
+              View on AniList
             </Text>
             <Feather name="external-link" size={15} color="#fff" />
           </TouchableOpacity>
