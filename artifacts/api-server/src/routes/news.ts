@@ -2,6 +2,9 @@ import { Router, type IRouter } from "express";
 
 const router: IRouter = Router();
 
+// Anime News Network RSS — reliable, no auth, accessible from server environments
+const RSS_URL = "https://www.animenewsnetwork.com/all/rss.xml?ann-edition=us";
+
 interface RssNewsItem {
   id: number;
   title: string;
@@ -51,8 +54,19 @@ function stripHtml(html: string): string {
     .trim();
 }
 
-async function fetchMalNewsRss(): Promise<RssNewsItem[]> {
-  const res = await fetch("https://myanimelist.net/rss/news.xml", {
+function inferCategory(title: string, categories: string[]): string {
+  const all = [title, ...categories].join(" ").toLowerCase();
+  if (all.includes("review"))    return "Review";
+  if (all.includes("interview")) return "Interview";
+  if (all.includes("preview") || all.includes("trailer")) return "Preview";
+  if (all.includes("episode"))   return "Episode";
+  if (all.includes("manga"))     return "Manga";
+  if (all.includes("game"))      return "Games";
+  return "News";
+}
+
+async function fetchAnnNewsRss(): Promise<RssNewsItem[]> {
+  const res = await fetch(RSS_URL, {
     headers: { "User-Agent": "Mozilla/5.0 (compatible; AniHour/1.0)" },
     signal: AbortSignal.timeout(10000),
   });
@@ -71,8 +85,13 @@ async function fetchMalNewsRss(): Promise<RssNewsItem[]> {
     const author =
       extractCdata(itemXml, "dc:creator") ||
       extractCdata(itemXml, "author") ||
-      "MyAnimeList";
-    const category = extractCdata(itemXml, "category") || "News";
+      "Anime News Network";
+
+    // Collect all <category> tags
+    const categoryMatches = [...itemXml.matchAll(/<category[^>]*>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/category>/gi)];
+    const categories = categoryMatches.map((m) => m[1].trim()).filter(Boolean);
+
+    const category = inferCategory(title, categories);
     const imageUrl = extractImageUrl(itemXml, description);
     const excerpt = stripHtml(description).slice(0, 220).trim();
 
@@ -80,7 +99,7 @@ async function fetchMalNewsRss(): Promise<RssNewsItem[]> {
       items.push({
         id: id++,
         title,
-        excerpt: excerpt || "Read the full article on MyAnimeList.",
+        excerpt: excerpt || "Read the full article on Anime News Network.",
         url: link.trim(),
         date: pubDate || new Date().toISOString(),
         author,
@@ -95,9 +114,10 @@ async function fetchMalNewsRss(): Promise<RssNewsItem[]> {
 
 router.get("/news", async (_req, res) => {
   try {
-    const items = await fetchMalNewsRss();
-    res.json({ items, source: "mal" });
-  } catch {
+    const items = await fetchAnnNewsRss();
+    res.json({ items, source: "ann" });
+  } catch (err) {
+    console.error("[news] RSS fetch failed:", err);
     res.status(500).json({ error: "Failed to fetch news feed" });
   }
 });

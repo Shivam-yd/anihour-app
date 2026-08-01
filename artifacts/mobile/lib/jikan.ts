@@ -1,4 +1,5 @@
 import { ContentType } from "./content-settings";
+export type { ContentType };
 
 // ─── AniList GraphQL API ─────────────────────────────────────────────────────
 // Drop-in replacement for the previous Jikan REST API.
@@ -278,7 +279,16 @@ function mapSource(s?: string | null): string | undefined {
 let _genreIdCounter = 1000;
 const _genreNameToId = new Map<string, number>();
 
+// Reverse-lookup: AniList genre/tag name (lowercase) → the numeric ID used in GENRE_ID_TO_ANILIST
+// so that tapping a genre chip on a detail screen navigates to the correct genre list.
+const ANILIST_NAME_TO_GENRE_ID: Record<string, number> = {};
+for (const [idStr, { name }] of Object.entries(GENRE_ID_TO_ANILIST)) {
+  ANILIST_NAME_TO_GENRE_ID[name.toLowerCase()] = Number(idStr);
+}
+
 function genreNameToId(name: string): number {
+  const knownId = ANILIST_NAME_TO_GENRE_ID[name.toLowerCase()];
+  if (knownId !== undefined) return knownId;
   if (!_genreNameToId.has(name)) {
     _genreNameToId.set(name, _genreIdCounter++);
   }

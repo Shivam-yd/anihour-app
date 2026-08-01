@@ -105,11 +105,11 @@ export default function AnimeDetailScreen() {
     if (!anime) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const shareTitle = anime.title_english ?? anime.title;
-    const url = anime.url ?? `https://myanimelist.net/${isManga ? "manga" : "anime"}/${id}`;
+    const url = anime.url ?? `https://anilist.co/${isManga ? "manga" : "anime"}/${id}`;
     try {
       await Share.share({
         title: shareTitle,
-        message: `Check out "${shareTitle}" on MyAnimeList: ${url}`,
+        message: `Check out "${shareTitle}" on AniList: ${url}`,
         url,
       });
     } catch (_) {}
@@ -443,7 +443,7 @@ export default function AnimeDetailScreen() {
           <View style={styles.infoRow}>
             <Ionicons name="bookmark-outline" size={16} color={Colors.dark.accent} />
             <Text style={styles.infoText}>
-              {(anime.members / 1000).toFixed(0)}K members on MyAnimeList
+              {(anime.members / 1000).toFixed(0)}K members on AniList
             </Text>
           </View>
         )}
