@@ -448,7 +448,7 @@ const MEDIA_FIELDS = `
   averageScore
   meanScore
   popularity
-  rankings(allTime: true) { rank type allTime }
+  rankings { rank type allTime }
   episodes
   chapters
   volumes
