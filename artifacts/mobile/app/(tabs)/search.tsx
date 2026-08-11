@@ -66,6 +66,7 @@ export default function SearchScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string | undefined>(undefined);
   const currentQueryRef = useRef("");
+  const searchRequestRef = useRef(0);
   const inputRef = useRef<TextInput>(null);
   const resultsRef = useRef<FlatList>(null);
   useScrollToTop(resultsRef);
@@ -74,6 +75,8 @@ export default function SearchScreen() {
   const suggestions = isManga ? MANGA_SUGGESTIONS : SUGGESTIONS;
 
   useEffect(() => {
+    searchRequestRef.current += 1;
+    currentQueryRef.current = "";
     setResults([]);
     setHasSearched(false);
     setError(false);
@@ -86,6 +89,7 @@ export default function SearchScreen() {
   const doSearch = useCallback(async (q: string, p: number, status: string | undefined) => {
     const trimmed = q.trim();
     if (!trimmed || trimmed.length < 2) return;
+    const requestId = ++searchRequestRef.current;
     if (p === 1) {
       Keyboard.dismiss();
       setIsLoading(true);
@@ -98,15 +102,19 @@ export default function SearchScreen() {
     }
     try {
       const data = await searchAnime(trimmed, p, contentType, isAdultMode, status);
+      if (requestId !== searchRequestRef.current) return;
       if (p === 1) setResults(data);
       else setResults(prev => [...prev, ...data]);
       setHasMore(data.length >= PAGE_SIZE);
       setPage(p);
     } catch {
+      if (requestId !== searchRequestRef.current) return;
       if (p === 1) { setError(true); setResults([]); }
     } finally {
-      setIsLoading(false);
-      setLoadingMore(false);
+      if (requestId === searchRequestRef.current) {
+        setIsLoading(false);
+        setLoadingMore(false);
+      }
     }
   }, [contentType, isAdultMode]);
 
@@ -120,7 +128,14 @@ export default function SearchScreen() {
   }, [selectedStatus, doSearch]);
 
   const handleClear = useCallback(() => {
+    searchRequestRef.current += 1;
     setQuery("");
+    setResults([]);
+    setHasSearched(false);
+    setError(false);
+    setPage(1);
+    setHasMore(false);
+    currentQueryRef.current = "";
     inputRef.current?.focus();
   }, []);
 

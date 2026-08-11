@@ -1,1 +1,2 @@
 - [AniList API constraints](anilist-api-constraints.md) — keep AniList GraphQL argument types and genre ID mappings aligned with the app adapter.
+- [Search request ordering](search-request-ordering.md) — invalidate older searches when filters, content type, or clearing the query changes the visible results.
