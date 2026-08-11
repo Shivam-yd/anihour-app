@@ -150,7 +150,7 @@ export default function UpcomingScreen() {
         ListHeaderComponent={renderHeader}
         renderItem={({ item: row }) => (
           <View style={styles.gridRow}>
-            {row.map((a) => <AnimeCard key={a.mal_id} anime={a} />)}
+            {row.map((a: Anime) => <AnimeCard key={a.mal_id} anime={a} />)}
             {row.length < 2 && <View style={{ flex: 1 }} />}
           </View>
         )}

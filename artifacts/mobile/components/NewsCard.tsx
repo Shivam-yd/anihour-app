@@ -12,6 +12,7 @@ import Animated, {
 
 import Colors from "@/constants/colors";
 import { NewsItem } from "@/lib/jikan";
+import { isSafeUrl } from "@/lib/utils";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -22,6 +23,7 @@ interface Props {
 function formatDate(dateStr: string): string {
   try {
     const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return dateStr;
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   } catch {
     return dateStr;
@@ -43,7 +45,7 @@ export function NewsCard({ article }: Props) {
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const handlePress = useCallback(async () => {
-    if (article.url) {
+    if (article.url && isSafeUrl(article.url)) {
       Haptics.selectionAsync();
       await WebBrowser.openBrowserAsync(article.url, {
         presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
@@ -53,8 +55,9 @@ export function NewsCard({ article }: Props) {
   }, [article.url]);
 
   const imageUrl = article.images?.jpg?.image_url;
-  const badgeStyle = article.badge
-    ? (BADGE_COLORS[article.badge] ?? BADGE_COLORS.NEWS)
+  const normalizedBadge = article.badge?.toUpperCase();
+  const badgeStyle = normalizedBadge
+    ? (BADGE_COLORS[normalizedBadge] ?? BADGE_COLORS.NEWS)
     : null;
 
   return (
@@ -74,9 +77,9 @@ export function NewsCard({ article }: Props) {
 
       <View style={styles.content}>
         <View style={styles.topRow}>
-          {badgeStyle && article.badge ? (
+          {badgeStyle && normalizedBadge ? (
             <View style={[styles.badge, { backgroundColor: badgeStyle.bg, borderColor: badgeStyle.border }]}>
-              <Text style={[styles.badgeText, { color: badgeStyle.text }]}>{article.badge}</Text>
+              <Text style={[styles.badgeText, { color: badgeStyle.text }]}>{normalizedBadge}</Text>
             </View>
           ) : null}
           <Text style={styles.date}>{formatDate(article.date)}</Text>

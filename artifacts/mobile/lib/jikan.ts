@@ -565,7 +565,7 @@ export async function fetchTopAnime(
   }
 
   const query = `
-    query ($page: Int, $perPage: Int, $type: MediaType, $sort: [MediaSort], $status: MediaStatus, $format: MediaFormat, $isAdult: Boolean) {
+    query ($page: Int, $perPage: Int, $type: MediaType, $sort: MediaSort, $status: MediaStatus, $format: MediaFormat, $isAdult: Boolean) {
       Page(page: $page, perPage: $perPage) {
         pageInfo { hasNextPage }
         media(type: $type, sort: [$sort], status: $status, format: $format, isAdult: $isAdult) {

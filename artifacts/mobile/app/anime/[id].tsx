@@ -78,7 +78,7 @@ export default function AnimeDetailScreen() {
   }, []);
 
   const handleMAL = useCallback(async () => {
-    if (anime?.url) {
+    if (anime?.url && isSafeUrl(anime.url)) {
       await WebBrowser.openBrowserAsync(anime.url, {
         presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
         toolbarColor: Colors.dark.background,
