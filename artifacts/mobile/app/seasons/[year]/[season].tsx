@@ -1,7 +1,7 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -31,6 +31,9 @@ const SEASON_META: Record<string, { color: string; icon: string }> = {
 export default function SeasonDetailScreen() {
   const { year, season } = useLocalSearchParams<{ year: string; season: string }>();
   const insets = useSafeAreaInsets();
+  const seasonYear = Number(year);
+  const validSeason = season === "winter" || season === "spring" || season === "summer" || season === "fall";
+  const validRoute = Number.isInteger(seasonYear) && seasonYear >= 2000 && seasonYear <= new Date().getFullYear() && validSeason;
 
   const [page, setPage] = useState(1);
   const [allAnime, setAllAnime] = useState<Anime[]>([]);
@@ -38,27 +41,45 @@ export default function SeasonDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
+  const requestRef = useRef(0);
 
   const load = useCallback(
     async (p: number) => {
+      const requestId = ++requestRef.current;
       if (p === 1) { setLoading(true); setError(false); }
       else setLoadingMore(true);
       try {
-        const result = await fetchSeasonArchiveHasNext(Number(year), season ?? "winter", p);
+        const result = await fetchSeasonArchiveHasNext(seasonYear, season!, p);
+        if (requestId !== requestRef.current) return;
         setAllAnime((prev) => (p === 1 ? result.items : [...prev, ...result.items]));
         setHasNext(result.hasNext);
         setPage(p);
       } catch {
-        setError(true);
+        if (requestId === requestRef.current) setError(true);
       } finally {
-        setLoading(false);
-        setLoadingMore(false);
+        if (requestId === requestRef.current) {
+          setLoading(false);
+          setLoadingMore(false);
+        }
       }
     },
-    [year, season]
+    [season, seasonYear]
   );
 
-  useEffect(() => { load(1); }, [load]);
+  useEffect(() => {
+    requestRef.current += 1;
+    setAllAnime([]);
+    setPage(1);
+    setHasNext(true);
+    if (!validRoute) {
+      setLoading(false);
+      setError(true);
+      return;
+    }
+    setLoading(true);
+    setError(false);
+    load(1);
+  }, [load, validRoute]);
 
   const meta = SEASON_META[season ?? "winter"] ?? { color: Colors.dark.primary, icon: "calendar" };
   const seasonLabel = season ? season.charAt(0).toUpperCase() + season.slice(1) : "Season";

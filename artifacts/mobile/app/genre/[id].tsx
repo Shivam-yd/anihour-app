@@ -2,7 +2,7 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -32,6 +32,7 @@ export default function GenreScreen() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const ct: ContentType = contentType === "manga" ? "manga" : "anime";
   const genreId = parseInt(id ?? "1", 10);
+  const validGenreId = Number.isInteger(genreId) && genreId > 0;
   const genreName = name ?? "Genre";
 
   const [allAnime, setAllAnime] = useState<Anime[]>([]);
@@ -41,33 +42,45 @@ export default function GenreScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState(false);
+  const requestRef = useRef(0);
 
   const load = useCallback(async (p: number, refresh = false) => {
+    const requestId = ++requestRef.current;
     if (refresh) setIsRefreshing(true);
     else if (p === 1) { setLoading(true); setError(false); }
     else setLoadingMore(true);
 
     try {
       const { items, hasNext } = await fetchAnimeByGenre(genreId, p, ct);
+      if (requestId !== requestRef.current) return;
       setAllAnime(prev => p === 1 ? items : [...prev, ...items]);
       setHasMore(hasNext);
       setPage(p);
     } catch {
-      if (p === 1) setError(true);
+      if (requestId === requestRef.current && p === 1) setError(true);
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
-      setIsRefreshing(false);
+      if (requestId === requestRef.current) {
+        setLoading(false);
+        setLoadingMore(false);
+        setIsRefreshing(false);
+      }
     }
   }, [genreId, ct]);
 
   useEffect(() => {
+    requestRef.current += 1;
     setAllAnime([]);
     setPage(1);
     setHasMore(true);
+    if (!validGenreId) {
+      setLoading(false);
+      setError(true);
+      return;
+    }
+    setLoading(true);
     setError(false);
     load(1);
-  }, [load]);
+  }, [load, validGenreId]);
 
   const handleLoadMore = useCallback(() => {
     if (loadingMore || !hasMore) return;

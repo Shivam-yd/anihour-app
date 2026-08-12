@@ -2,7 +2,7 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -52,6 +52,8 @@ const StudioAnimeCard = memo(function StudioAnimeCard({ anime }: { anime: Anime 
 export default function StudioScreen() {
   const { id, name } = useLocalSearchParams<{ id: string; name: string }>();
   const insets = useSafeAreaInsets();
+  const studioId = Number(id);
+  const validStudioId = Number.isInteger(studioId) && studioId > 0;
 
   const [page, setPage] = useState(1);
   const [allAnime, setAllAnime] = useState<Anime[]>([]);
@@ -60,29 +62,47 @@ export default function StudioScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
   const [studioInfo, setStudioInfo] = useState<StudioInfo | null>(null);
+  const requestRef = useRef(0);
 
   const load = useCallback(async (p: number) => {
+    const requestId = ++requestRef.current;
     if (p === 1) { setLoading(true); setError(false); }
     else setLoadingMore(true);
     try {
-      const result = await fetchStudioAnimeHasNext(Number(id), p);
+      const result = await fetchStudioAnimeHasNext(studioId, p);
+      if (requestId !== requestRef.current) return;
       setAllAnime((prev) => p === 1 ? result.items : [...prev, ...result.items]);
       setHasNext(result.hasNext);
       setPage(p);
     } catch {
-      setError(true);
+      if (requestId === requestRef.current) setError(true);
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      if (requestId === requestRef.current) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
     }
-  }, [id]);
+  }, [studioId]);
 
   useEffect(() => {
+    requestRef.current += 1;
+    setAllAnime([]);
+    setPage(1);
+    setHasNext(true);
+    setStudioInfo(null);
+    if (!validStudioId) {
+      setLoading(false);
+      setError(true);
+      return;
+    }
+    setLoading(true);
+    setError(false);
     load(1);
-    fetchStudioInfo(Number(id)).then((info) => {
-      if (info) setStudioInfo(info);
+    const infoRequest = requestRef.current;
+    fetchStudioInfo(studioId).then((info) => {
+      if (infoRequest === requestRef.current && info) setStudioInfo(info);
     });
-  }, [load, id]);
+  }, [load, studioId, validStudioId]);
 
   const rows = chunkArray(allAnime, CARD_COLS);
   const studioName = studioInfo?.name || name || "Studio";
