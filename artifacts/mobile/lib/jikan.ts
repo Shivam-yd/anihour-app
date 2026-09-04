@@ -114,6 +114,13 @@ export interface Recommendation {
   votes: number;
 }
 
+export interface LatestEpisode {
+  id: number;
+  episode: number;
+  airingAt: number;
+  media: Anime;
+}
+
 export interface StudioInfo {
   name: string;
   imageUrl: string | null;
@@ -642,6 +649,69 @@ export async function fetchUpcoming(
 
   const raw = data.Page.media ?? [];
   const items = deduplicateById(raw.map((m) => mapMedia(m, isManga)));
+  return { items, hasNext: data.Page.pageInfo.hasNextPage };
+}
+
+export async function fetchLatestEpisodes(
+  page = 1,
+  isAdult = false
+): Promise<{ items: LatestEpisode[]; hasNext: boolean }> {
+  const now = Math.floor(Date.now() / 1000);
+  const fourteenDaysAgo = now - 14 * 24 * 60 * 60;
+
+  const query = `
+    query ($page: Int, $perPage: Int, $airingAtGreater: Int, $airingAtLesser: Int) {
+      Page(page: $page, perPage: $perPage) {
+        pageInfo { hasNextPage }
+        airingSchedules(
+          airingAt_greater: $airingAtGreater
+          airingAt_lesser: $airingAtLesser
+          sort: TIME_DESC
+        ) {
+          id
+          airingAt
+          episode
+          media {
+            id
+            title { romaji english }
+            coverImage { large medium extraLarge }
+            averageScore
+            isAdult
+            format
+            siteUrl
+          }
+        }
+      }
+    }
+  `;
+
+  const data = await gql<{
+    Page: {
+      pageInfo: { hasNextPage: boolean };
+      airingSchedules: Array<{
+        id: number;
+        airingAt: number;
+        episode: number;
+        media: AniListMedia | null;
+      }>;
+    };
+  }>(query, {
+    page,
+    perPage: 30,
+    airingAtGreater: fourteenDaysAgo,
+    airingAtLesser: now,
+  });
+
+  const schedules = data.Page.airingSchedules ?? [];
+  const items = schedules
+    .filter((schedule) => schedule.media && (isAdult || !schedule.media.isAdult))
+    .map((schedule) => ({
+      id: schedule.id,
+      episode: schedule.episode,
+      airingAt: schedule.airingAt,
+      media: mapMedia(schedule.media!, false),
+    }));
+
   return { items, hasNext: data.Page.pageInfo.hasNextPage };
 }
 

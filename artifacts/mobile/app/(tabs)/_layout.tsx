@@ -46,6 +46,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="latest"
+        options={{
+          title: "Latest",
+          tabBarIcon: ({ color }) => <Ionicons name="flash" size={22} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="upcoming"
         options={{
           title: "Upcoming",
