@@ -249,7 +249,7 @@ export default function SeasonScreen() {
         colors={["rgba(255,107,157,0.18)", "rgba(26,26,46,0)"]}
         style={styles.headerGradient}
       >
-        <View style={[styles.headerContent, { paddingTop: Platform.OS === "web" ? insets.top + 67 : insets.top + 12 }]}>
+        <View style={[styles.headerContent, { paddingTop: insets.top + 12 }]}>
           <View>
             <View style={styles.brandRow}>
               <Text style={styles.brandA}>Ani</Text>

@@ -139,7 +139,7 @@ export default function LatestScreen() {
     if (!loadingMore && hasMore) load(page + 1);
   }, [hasMore, loadingMore, load, page]);
 
-  const topPadding = Platform.OS === "web" ? insets.top + 67 : insets.top + 12;
+  const topPadding = insets.top + 12;
 
   return (
     <View style={styles.container}>

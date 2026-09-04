@@ -89,7 +89,7 @@ export default function UpcomingScreen() {
   const renderHeader = useCallback(() => (
     <View>
       <LinearGradient colors={["rgba(69,183,209,0.15)", "transparent"]} style={styles.headerGradient}>
-        <View style={[styles.headerContent, { paddingTop: Platform.OS === "web" ? insets.top + 67 : insets.top + 12 }]}>
+        <View style={[styles.headerContent, { paddingTop: insets.top + 12 }]}>
           <Text style={styles.headerTitle}>Upcoming {isManga ? "Manga" : "Anime"}</Text>
           <View style={styles.headerActions}>
             <HeaderSearchButton />

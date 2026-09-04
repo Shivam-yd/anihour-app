@@ -146,7 +146,7 @@ export default function TopScreen() {
   const renderHeader = useCallback(() => (
     <View>
       <LinearGradient colors={["rgba(78,205,196,0.15)", "transparent"]} style={styles.headerGradient}>
-        <View style={[styles.headerContent, { paddingTop: Platform.OS === "web" ? insets.top + 67 : insets.top + 12 }]}>
+        <View style={[styles.headerContent, { paddingTop: insets.top + 12 }]}>
           <View>
             <Text style={styles.headerTitle}>Top {isManga ? "Manga" : "Anime"}</Text>
           </View>

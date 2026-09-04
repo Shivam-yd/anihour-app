@@ -36,7 +36,7 @@ export default function NewsScreen() {
       colors={["rgba(255,167,38,0.13)", "transparent"]}
       style={styles.headerGradient}
     >
-      <View style={[styles.headerContent, { paddingTop: Platform.OS === "web" ? insets.top + 67 : insets.top + 12 }]}>
+      <View style={[styles.headerContent, { paddingTop: insets.top + 12 }]}>
         <View>
           <Text style={styles.headerTitle}>Anime News</Text>
         </View>

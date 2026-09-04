@@ -144,7 +144,7 @@ export default function SearchScreen() {
     router.push({ pathname: "/genre/[id]", params: { id: genreId.toString(), name: genreName, contentType } });
   }, [contentType]);
 
-  const topPad = Platform.OS === "web" ? insets.top + 67 : insets.top + 12;
+  const topPad = insets.top + 12;
 
   return (
     <View style={styles.container}>
