@@ -18,6 +18,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Colors from "@/constants/colors";
+import { HeaderSearchButton } from "@/components/HeaderSearchButton";
 import { fetchLatestEpisodes, LatestEpisode } from "@/lib/jikan";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -172,8 +173,11 @@ export default function LatestScreen() {
                   <Text style={styles.headerTitle}>Latest</Text>
                   <Text style={styles.headerSubtitle}>Fresh releases, newest first</Text>
                 </View>
-                <View style={styles.iconBox}>
-                  <Ionicons name="flash" size={22} color={Colors.dark.primary} />
+                <View style={styles.headerActions}>
+                  <HeaderSearchButton />
+                  <View style={styles.iconBox}>
+                    <Ionicons name="flash" size={22} color={Colors.dark.primary} />
+                  </View>
                 </View>
               </View>
             </LinearGradient>
@@ -250,6 +254,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
   eyebrow: {
     color: Colors.dark.primary,
     fontSize: 10,

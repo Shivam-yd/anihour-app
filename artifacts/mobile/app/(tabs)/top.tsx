@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AnimeCardWide } from "@/components/AnimeCard";
 import { ContentToggleBar } from "@/components/ContentToggleBar";
+import { HeaderSearchButton } from "@/components/HeaderSearchButton";
 import { SkeletonWideCard } from "@/components/SkeletonCard";
 import Colors from "@/constants/colors";
 import { useContentSettings } from "@/lib/content-settings";
@@ -149,8 +150,11 @@ export default function TopScreen() {
           <View>
             <Text style={styles.headerTitle}>Top {isManga ? "Manga" : "Anime"}</Text>
           </View>
-          <View style={styles.trophyBox}>
-            <Ionicons name="trophy" size={22} color={Colors.dark.secondary} />
+          <View style={styles.headerActions}>
+            <HeaderSearchButton />
+            <View style={styles.trophyBox}>
+              <Ionicons name="trophy" size={22} color={Colors.dark.secondary} />
+            </View>
           </View>
         </View>
       </LinearGradient>
@@ -263,6 +267,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingBottom: 12,
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
   },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
   headerTitle: { color: Colors.dark.text, fontSize: 26, fontFamily: "Inter_700Bold" },
   trophyBox: {
     width: 44, height: 44, borderRadius: 12, backgroundColor: Colors.dark.secondaryLight,

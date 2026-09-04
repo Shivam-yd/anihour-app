@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 
 import { NewsCard } from "@/components/NewsCard";
+import { HeaderSearchButton } from "@/components/HeaderSearchButton";
 import { SkeletonWideCard } from "@/components/SkeletonCard";
 import Colors from "@/constants/colors";
 import { fetchAnimeNews, NewsItem } from "@/lib/jikan";
@@ -39,8 +40,11 @@ export default function NewsScreen() {
         <View>
           <Text style={styles.headerTitle}>Anime News</Text>
         </View>
-        <View style={styles.rssBox}>
-          <Feather name="rss" size={20} color={Colors.dark.warning} />
+        <View style={styles.headerActions}>
+          <HeaderSearchButton />
+          <View style={styles.rssBox}>
+            <Feather name="rss" size={20} color={Colors.dark.warning} />
+          </View>
         </View>
       </View>
     </LinearGradient>
@@ -117,6 +121,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
   headerTitle: {
     color: Colors.dark.text,
     fontSize: 26,

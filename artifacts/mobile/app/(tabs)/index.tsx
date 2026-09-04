@@ -22,6 +22,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AnimeCard, AnimeCardWide } from "@/components/AnimeCard";
 import { ContentToggleBar } from "@/components/ContentToggleBar";
+import { HeaderSearchButton } from "@/components/HeaderSearchButton";
 import { SkeletonCard } from "@/components/SkeletonCard";
 import Colors from "@/constants/colors";
 import { useContentSettings } from "@/lib/content-settings";
@@ -256,13 +257,16 @@ export default function SeasonScreen() {
             </View>
             <Text style={styles.headerTitle}>{headerTitle}</Text>
           </View>
-          <TouchableOpacity
-            style={styles.viewToggle}
-            onPress={() => setViewMode(v => v === "grid" ? "list" : "grid")}
-            activeOpacity={0.8}
-          >
-            <Ionicons name={viewMode === "grid" ? "list" : "grid"} size={18} color={Colors.dark.primary} />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <HeaderSearchButton />
+            <TouchableOpacity
+              style={styles.viewToggle}
+              onPress={() => setViewMode(v => v === "grid" ? "list" : "grid")}
+              activeOpacity={0.8}
+            >
+              <Ionicons name={viewMode === "grid" ? "list" : "grid"} size={18} color={Colors.dark.primary} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <TouchableOpacity
@@ -387,6 +391,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
   brandRow: { flexDirection: "row", alignItems: "baseline", marginBottom: 2 },
   brandA: { color: Colors.dark.primary, fontSize: 15, fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
   brandB: { color: Colors.dark.text, fontSize: 15, fontFamily: "Inter_400Regular", letterSpacing: 0.5 },
