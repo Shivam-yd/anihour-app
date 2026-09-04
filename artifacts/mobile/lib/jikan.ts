@@ -276,6 +276,30 @@ function mapSource(s?: string | null): string | undefined {
   return map[s] ?? s;
 }
 
+function cleanDescription(description?: string | null): string | undefined {
+  if (!description) return undefined;
+
+  // AniList descriptions can still contain HTML markup even when requested
+  // with asHtml: false. Convert line breaks before removing tags so paragraphs
+  // remain readable in React Native's plain Text component.
+  const cleaned = description
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#0*39;|&#x0*27;|&apos;/gi, "'")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>\s*<p[^>]*>/gi, "\n\n")
+    .replace(/<[^>]*>/g, "")
+    .replace(/\r\n?/g, "\n")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  return cleaned || undefined;
+}
+
 let _genreIdCounter = 1000;
 const _genreNameToId = new Map<string, number>();
 
@@ -377,7 +401,7 @@ function mapMedia(m: AniListMedia, isManga = false): Anime {
     chapters:     m.chapters ?? undefined,
     volumes:      m.volumes ?? undefined,
     status:       mapStatus(m.status, isManga),
-    synopsis:     m.description ?? undefined,
+    synopsis:     cleanDescription(m.description),
     genres,
     studios:      isManga ? undefined : studios,
     authors:      isManga ? authors : undefined,
@@ -1005,7 +1029,7 @@ async function generateFallbackNews(): Promise<NewsItem[]> {
     }>(query, { season, year });
 
     for (const anime of (data.airing.media ?? []).slice(0, 5)) {
-      const desc = (anime as any).synopsis ?? "";
+      const desc = cleanDescription((anime as any).synopsis) ?? "";
       newsItems.push({
         mal_id: anime.id,
         title: `Now Airing: ${anime.title.english ?? anime.title.romaji}`,
@@ -1020,7 +1044,7 @@ async function generateFallbackNews(): Promise<NewsItem[]> {
     }
 
     for (const anime of (data.trending.media ?? []).slice(0, 4)) {
-      const desc = (anime as any).synopsis ?? "";
+      const desc = cleanDescription((anime as any).synopsis) ?? "";
       const score = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : "N/A";
       newsItems.push({
         mal_id: anime.id * 100 + 1,
