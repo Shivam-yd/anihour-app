@@ -162,9 +162,15 @@ export default function SearchScreen() {
             >
               <Text style={[styles.adultText, isAdultMode && styles.adultTextActive]}>18+</Text>
             </TouchableOpacity>
-            <View style={styles.searchIcon}>
+            <TouchableOpacity
+              style={styles.searchIcon}
+              onPress={() => handleSearch(query)}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Search"
+            >
               <Feather name="search" size={20} color={Colors.dark.primary} />
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -197,9 +203,6 @@ export default function SearchScreen() {
               </TouchableOpacity>
             )}
           </View>
-          <TouchableOpacity style={styles.searchBtn} onPress={() => handleSearch(query)} activeOpacity={0.8}>
-            <Feather name="arrow-right" size={18} color="#fff" />
-          </TouchableOpacity>
         </View>
 
         {/* Simple status pills */}
