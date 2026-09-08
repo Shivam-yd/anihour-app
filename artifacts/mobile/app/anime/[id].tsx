@@ -158,7 +158,9 @@ export default function AnimeDetailScreen() {
 
   if (isError || !anime) {
     const errMsg = error instanceof Error ? error.message : String(error ?? "unknown");
-    console.error("[AnimeDetail] load failed id=" + id, errMsg);
+    if (__DEV__) {
+      console.error("[AnimeDetail] load failed id=" + id, errMsg);
+    }
     return (
       <View style={styles.centered}>
         <Ionicons name="sad-outline" size={48} color={Colors.dark.textTertiary} />

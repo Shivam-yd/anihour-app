@@ -20,6 +20,7 @@
     "android": {
       "package": "com.anihour.app",
       "versionCode": 1,
+      "permissions": [],
       "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
@@ -37,7 +38,18 @@
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "targetSdkVersion": 36,
+            "enableMinifyInReleaseBuilds": true,
+            "usesCleartextTraffic": false,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

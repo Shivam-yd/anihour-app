@@ -1,4 +1,5 @@
 import { ContentType } from "./content-settings";
+import { z } from "zod";
 export type { ContentType };
 
 // ─── AniList GraphQL API ─────────────────────────────────────────────────────
@@ -163,6 +164,92 @@ interface AniListMedia {
   siteUrl?: string | null;
 }
 
+const AniListMediaSchema = z.object({
+  id: z.number().int().positive(),
+  title: z.object({
+    romaji: z.string().min(1),
+    english: z.string().nullable().optional(),
+  }).passthrough(),
+  coverImage: z.object({
+    large: z.string().nullable().optional(),
+    medium: z.string().nullable().optional(),
+    extraLarge: z.string().nullable().optional(),
+  }).nullable().optional(),
+  bannerImage: z.string().nullable().optional(),
+  averageScore: z.number().nullable().optional(),
+  popularity: z.number().nullable().optional(),
+  meanScore: z.number().nullable().optional(),
+  rankings: z.array(z.object({
+    rank: z.number(),
+    type: z.string(),
+    allTime: z.boolean(),
+  }).passthrough()).optional(),
+  episodes: z.number().int().nullable().optional(),
+  chapters: z.number().int().nullable().optional(),
+  volumes: z.number().int().nullable().optional(),
+  status: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  genres: z.array(z.string()).optional(),
+  tags: z.array(z.object({ name: z.string(), rank: z.number() }).passthrough()).optional(),
+  studios: z.object({
+    nodes: z.array(z.object({ id: z.number().int(), name: z.string() }).passthrough()),
+  }).optional(),
+  staff: z.object({
+    edges: z.array(z.object({
+      role: z.string(),
+      node: z.object({
+        id: z.number().int(),
+        name: z.object({ full: z.string() }).passthrough(),
+      }).passthrough(),
+    }).passthrough()),
+  }).optional(),
+  seasonYear: z.number().int().nullable().optional(),
+  season: z.string().nullable().optional(),
+  format: z.string().nullable().optional(),
+  isAdult: z.boolean().optional(),
+  duration: z.number().int().nullable().optional(),
+  source: z.string().nullable().optional(),
+  startDate: z.object({
+    year: z.number().int().optional(),
+    month: z.number().int().optional(),
+    day: z.number().int().optional(),
+  }).optional(),
+  endDate: z.object({
+    year: z.number().int().optional(),
+    month: z.number().int().optional(),
+    day: z.number().int().optional(),
+  }).optional(),
+  trailer: z.object({
+    id: z.string().nullable().optional(),
+    site: z.string().nullable().optional(),
+  }).nullable().optional(),
+  externalLinks: z.array(z.object({
+    site: z.string(),
+    url: z.string(),
+    type: z.string(),
+  }).passthrough()).optional(),
+  favourites: z.number().int().nullable().optional(),
+  siteUrl: z.string().nullable().optional(),
+}).passthrough();
+
+const GraphQLResponseSchema = z.object({
+  data: z.unknown().optional(),
+  errors: z.array(z.unknown()).optional(),
+}).passthrough();
+
+const NewsResponseSchema = z.object({
+  items: z.array(z.object({
+    id: z.number().int(),
+    title: z.string(),
+    excerpt: z.string(),
+    url: z.string(),
+    date: z.string(),
+    author: z.string(),
+    imageUrl: z.string().nullable(),
+    category: z.string(),
+  }).passthrough()).default([]),
+}).passthrough();
+
 // ── Genre mapping ────────────────────────────────────────────────────────────
 
 export const GENRE_MAP: Record<string, { id: number; label: string }> = {
@@ -326,7 +413,17 @@ function genreNameToId(name: string): number {
   return _genreNameToId.get(name)!;
 }
 
+function secureUrl(url?: string | null): string | undefined {
+  return url && /^https:\/\//i.test(url) ? url : undefined;
+}
+
 function mapMedia(m: AniListMedia, isManga = false): Anime {
+  const parsed = AniListMediaSchema.safeParse(m);
+  if (!parsed.success) {
+    throw new Error("AniList returned invalid media data");
+  }
+  m = parsed.data as AniListMedia;
+
   const large  = m.coverImage?.extraLarge ?? m.coverImage?.large ?? "";
   const medium = m.coverImage?.medium ?? large;
 
@@ -390,7 +487,8 @@ function mapMedia(m: AniListMedia, isManga = false): Anime {
   ]);
   const streaming: StreamingService[] = (m.externalLinks ?? [])
     .filter((l) => l.type === "STREAMING" || STREAMING_SITES.has(l.site.toLowerCase()))
-    .map((l) => ({ name: l.site, url: l.url }));
+    .map((l) => ({ name: l.site, url: secureUrl(l.url) }))
+    .filter((l): l is StreamingService => Boolean(l.url));
 
   // Duration
   const duration = m.duration != null ? `${m.duration} min per ep` : undefined;
@@ -424,7 +522,7 @@ function mapMedia(m: AniListMedia, isManga = false): Anime {
     trailer,
     members:      m.popularity ?? undefined,
     favorites:    m.favourites ?? undefined,
-    url:          m.siteUrl ?? undefined,
+    url:          secureUrl(m.siteUrl),
   };
 }
 
@@ -443,12 +541,38 @@ function filterSFW(items: Anime[]): Anime[] {
 
 // ── GraphQL fetch ─────────────────────────────────────────────────────────────
 
+const ANILIST_REQUEST_INTERVAL_MS = 700;
+const GQL_CACHE_TTL_MS = 30_000;
+let nextAniListRequestAt = 0;
+const gqlCache = new Map<string, { expiresAt: number; data: unknown }>();
+
+async function waitForAniListRequestSlot(): Promise<void> {
+  const now = Date.now();
+  const waitMs = Math.max(0, nextAniListRequestAt - now);
+  nextAniListRequestAt = Math.max(now, nextAniListRequestAt) + ANILIST_REQUEST_INTERVAL_MS;
+  if (waitMs > 0) {
+    await new Promise((resolve) => setTimeout(resolve, waitMs));
+  }
+}
+
+function getGqlCacheKey(query: string, variables: Record<string, unknown>): string {
+  return JSON.stringify([query, variables]);
+}
+
 async function gql<T = unknown>(
   query: string,
   variables: Record<string, unknown> = {},
   retries = 3
 ): Promise<T> {
+  const cacheKey = getGqlCacheKey(query, variables);
+  const cached = gqlCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.data as T;
+  }
+  gqlCache.delete(cacheKey);
+
   for (let i = 0; i <= retries; i++) {
+    await waitForAniListRequestSlot();
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 15000);
     try {
@@ -461,16 +585,35 @@ async function gql<T = unknown>(
       clearTimeout(timer);
       if (res.status === 429) {
         if (i === retries) throw new Error("Rate limit exceeded");
-        await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
+        const retryAfter = Number(res.headers.get("retry-after"));
+        const retryDelay = Number.isFinite(retryAfter) && retryAfter > 0
+          ? retryAfter * 1000
+          : 1000 * (i + 1);
+        await new Promise((r) => setTimeout(r, retryDelay));
         continue;
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json() as { data?: T; errors?: unknown[] };
+      const envelope = GraphQLResponseSchema.safeParse(await res.json());
+      if (!envelope.success || envelope.data.data === undefined) {
+        throw new Error("AniList returned an invalid GraphQL response");
+      }
+      const json = envelope.data;
       if (json.errors) {
-        const first = (json.errors[0] as { message?: string })?.message ?? "GraphQL error";
+        const firstError = json.errors[0];
+        const first = firstError && typeof firstError === "object" && "message" in firstError
+          ? String(firstError.message)
+          : "GraphQL error";
         throw new Error(first);
       }
-      return json.data as T;
+      const data = z.record(z.string(), z.unknown()).safeParse(json.data);
+      if (!data.success) {
+        throw new Error("AniList returned an invalid data payload");
+      }
+      gqlCache.set(cacheKey, {
+        expiresAt: Date.now() + GQL_CACHE_TTL_MS,
+        data: data.data,
+      });
+      return data.data as T;
     } catch (e) {
       clearTimeout(timer);
       if (i === retries) throw e;
@@ -1036,28 +1179,21 @@ export async function fetchAnimeNews(): Promise<NewsItem[]> {
     } as RequestInit);
 
     if (res.ok) {
-      const data = await res.json() as {
-        items: Array<{
-          id: number;
-          title: string;
-          excerpt: string;
-          url: string;
-          date: string;
-          author: string;
-          imageUrl: string | null;
-          category: string;
-        }>;
-      };
+      const parsed = NewsResponseSchema.safeParse(await res.json());
+      if (!parsed.success) {
+        throw new Error("News endpoint returned an invalid response");
+      }
+      const data = parsed.data;
 
       if (data.items && data.items.length > 0) {
         return data.items.map((item) => ({
           mal_id: item.id,
           title: item.title,
           excerpt: item.excerpt,
-          url: item.url,
+          url: secureUrl(item.url) ?? "",
           date: item.date,
           author_username: item.author,
-          images: { jpg: { image_url: item.imageUrl ?? "" } },
+          images: { jpg: { image_url: secureUrl(item.imageUrl) ?? "" } },
           comments: 0,
           badge: mapCategoryToBadge(item.category),
         }));

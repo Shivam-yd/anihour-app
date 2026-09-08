@@ -35,6 +35,58 @@ const MIME_TYPES = {
   ".map": "application/json",
 };
 
+const SECURITY_HEADERS = {
+  "x-content-type-options": "nosniff",
+  "referrer-policy": "no-referrer",
+  "permissions-policy": "camera=(), microphone=(), geolocation=()",
+};
+
+function loadStaticAssets() {
+  const assets = new Map();
+  if (!fs.existsSync(STATIC_ROOT)) return assets;
+
+  const pending = [{ directory: STATIC_ROOT, relativeDirectory: "" }];
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (!current) continue;
+
+    let entries;
+    try {
+      entries = fs.readdirSync(current.directory, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+
+    for (const entry of entries) {
+      if (entry.isSymbolicLink()) continue;
+
+      const absolutePath = path.join(current.directory, entry.name);
+      const relativePath = path.posix.join(current.relativeDirectory, entry.name);
+
+      if (entry.isDirectory()) {
+        pending.push({
+          directory: absolutePath,
+          relativeDirectory: relativePath,
+        });
+        continue;
+      }
+
+      try {
+        const content = fs.readFileSync(absolutePath);
+        const ext = path.extname(entry.name).toLowerCase();
+        assets.set(`/${relativePath}`, {
+          content,
+          contentType: MIME_TYPES[ext] || "application/octet-stream",
+        });
+      } catch {}
+    }
+  }
+
+  return assets;
+}
+
+const STATIC_ASSETS = loadStaticAssets();
+
 function getAppName() {
   try {
     const appJsonPath = path.resolve(__dirname, "..", "app.json");
@@ -46,9 +98,8 @@ function getAppName() {
 }
 
 function serveManifest(platform, res) {
-  const manifestPath = path.join(STATIC_ROOT, platform, "manifest.json");
-
-  if (!fs.existsSync(manifestPath)) {
+  const asset = STATIC_ASSETS.get(`/${platform}/manifest.json`);
+  if (!asset) {
     res.writeHead(404, { "content-type": "application/json" });
     res.end(
       JSON.stringify({ error: `Manifest not found for platform: ${platform}` }),
@@ -56,13 +107,12 @@ function serveManifest(platform, res) {
     return;
   }
 
-  const manifest = fs.readFileSync(manifestPath, "utf-8");
   res.writeHead(200, {
-    "content-type": "application/json",
+    "content-type": asset.contentType,
     "expo-protocol-version": "1",
     "expo-sfv-version": "0",
   });
-  res.end(manifest);
+  res.end(asset.content);
 }
 
 function serveLandingPage(req, res, landingPageTemplate, appName) {
@@ -81,33 +131,41 @@ function serveLandingPage(req, res, landingPageTemplate, appName) {
   res.end(html);
 }
 
-function serveStaticFile(urlPath, res) {
-  const safePath = path.normalize(urlPath).replace(/^(\.\.(\/|\\|$))+/, "");
-  const filePath = path.join(STATIC_ROOT, safePath);
-
-  if (!filePath.startsWith(STATIC_ROOT)) {
-    res.writeHead(403);
-    res.end("Forbidden");
+function serveStaticFile(urlPath, method, res) {
+  let normalizedPath;
+  try {
+    normalizedPath = decodeURIComponent(urlPath);
+  } catch {
+    res.writeHead(400);
+    res.end("Bad Request");
     return;
   }
 
-  if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+  const asset = STATIC_ASSETS.get(normalizedPath);
+  if (!asset) {
     res.writeHead(404);
     res.end("Not Found");
     return;
   }
 
-  const ext = path.extname(filePath).toLowerCase();
-  const contentType = MIME_TYPES[ext] || "application/octet-stream";
-  const content = fs.readFileSync(filePath);
-  res.writeHead(200, { "content-type": contentType });
-  res.end(content);
+  res.writeHead(200, { "content-type": asset.contentType });
+  res.end(method === "HEAD" ? undefined : asset.content);
 }
 
 const landingPageTemplate = fs.readFileSync(TEMPLATE_PATH, "utf-8");
 const appName = getAppName();
 
 const server = http.createServer((req, res) => {
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+    res.setHeader(name, value);
+  }
+
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    res.writeHead(405, { Allow: "GET, HEAD" });
+    res.end("Method Not Allowed");
+    return;
+  }
+
   const url = new URL(req.url || "/", `http://${req.headers.host}`);
   let pathname = url.pathname;
 
@@ -126,7 +184,7 @@ const server = http.createServer((req, res) => {
     }
   }
 
-  serveStaticFile(pathname, res);
+  serveStaticFile(pathname, req.method, res);
 });
 
 const port = parseInt(process.env.PORT || "3000", 10);
