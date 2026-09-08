@@ -1,3 +1,5 @@
 - [AniList API constraints](anilist-api-constraints.md) — keep AniList GraphQL argument types and genre ID mappings aligned with the app adapter.
 - [Search request ordering](search-request-ordering.md) — invalidate older searches when filters, content type, or clearing the query changes the visible results.
 - [Expo build port](expo-build-port.md) — static builds need a separate Metro port because the mockup workflow occupies 8081.
+- [Expo Android hardening](expo-android-hardening.md) — SDK 54 rejects direct target/cleartext fields; use expo-build-properties for API 36, R8, shrinking, and cleartext policy.
+- [Metro image-size constraint](metro-image-size-constraint.md) — Metro 0.83 requires image-size 1.x; forcing v2 clears advisories but breaks static bundling.
