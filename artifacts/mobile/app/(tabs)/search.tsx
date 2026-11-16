@@ -1,7 +1,7 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import { useScrollToTop } from "@react-navigation/native";
+import { useScrollToTop } from "expo-router/react-navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,

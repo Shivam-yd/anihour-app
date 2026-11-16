@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useScrollToTop } from "@react-navigation/native";
+import { useScrollToTop } from "expo-router/react-navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
