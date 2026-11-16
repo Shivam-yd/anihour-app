@@ -130,7 +130,7 @@ export interface StudioInfo {
 
 // ── Internal AniList types ───────────────────────────────────────────────────
 
-interface AniListDate { year?: number; month?: number; day?: number }
+interface AniListDate { year?: number | null; month?: number | null; day?: number | null }
 
 interface AniListMedia {
   id: number;
@@ -210,14 +210,14 @@ const AniListMediaSchema = z.object({
   duration: z.number().int().nullable().optional(),
   source: z.string().nullable().optional(),
   startDate: z.object({
-    year: z.number().int().optional(),
-    month: z.number().int().optional(),
-    day: z.number().int().optional(),
+    year: z.number().int().nullable().optional(),
+    month: z.number().int().nullable().optional(),
+    day: z.number().int().nullable().optional(),
   }).optional(),
   endDate: z.object({
-    year: z.number().int().optional(),
-    month: z.number().int().optional(),
-    day: z.number().int().optional(),
+    year: z.number().int().nullable().optional(),
+    month: z.number().int().nullable().optional(),
+    day: z.number().int().nullable().optional(),
   }).optional(),
   trailer: z.object({
     id: z.string().nullable().optional(),

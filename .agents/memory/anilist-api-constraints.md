@@ -7,4 +7,8 @@ AniList's `rankings` field does not accept an `allTime` argument; request `ranki
 
 **Why:** Both invalid GraphQL shapes return HTTP 400 and make an entire screen appear as “Failed to load” even though the endpoint itself is reachable.
 
+AniList date components can be explicitly null for unknown dates, especially end dates of ongoing series. Validate null as an unknown value, not as malformed media.
+
+**Why:** Rejecting unknown end dates makes successful list responses fail during adaptation and displays “Failed to load” for otherwise valid anime.
+
 **How to apply:** When changing the adapter queries, validate the exact GraphQL query against `https://graphql.anilist.co`, sanitize description markup at the adapter boundary, and preserve the numeric genre mapping used by detail-screen genre navigation. AniList can also rate-limit broad sequential sweeps, so avoid interpreting temporary 429s as per-screen failures.
